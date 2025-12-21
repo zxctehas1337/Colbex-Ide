@@ -16,6 +16,7 @@ interface SearchState {
 
     isSearching: boolean;
     results: SearchResult[];
+    searchVersion: number; // Track search version for cancellation
 
     setQuery: (q: string) => void;
     setReplaceQuery: (q: string) => void;
@@ -46,6 +47,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
 
     isSearching: false,
     results: [],
+    searchVersion: 0,
 
     setQuery: (q) => set({ query: q }),
     setReplaceQuery: (q) => set({ replaceQuery: q }),
@@ -59,12 +61,13 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     togglePreserveCase: () => set((state) => ({ preserveCase: !state.preserveCase })),
 
     performSearch: async (rootPath: string) => {
-        const { query, isCaseSensitive, isWholeWord, isRegex, includePattern, excludePattern, filterPattern, isSearching } = get();
+        const { query, isCaseSensitive, isWholeWord, isRegex, includePattern, excludePattern, filterPattern } = get();
 
         if (!query.trim()) return;
-        if (isSearching) return; // Prevent concurrent search? Or maybe cancel previous?
 
-        set({ isSearching: true, results: [] });
+        // Increment version to invalidate any in-flight searches
+        const currentVersion = get().searchVersion + 1;
+        set({ isSearching: true, results: [], searchVersion: currentVersion });
 
         try {
             const results = await searchInDirectory(rootPath, {
@@ -76,11 +79,18 @@ export const useSearchStore = create<SearchState>((set, get) => ({
                 excludePattern,
                 filterPattern
             });
-            set({ results });
+            
+            // Only update if this is still the latest search
+            if (get().searchVersion === currentVersion) {
+                set({ results });
+            }
         } catch (e) {
             console.error("Search failed", e);
         } finally {
-            set({ isSearching: false });
+            // Only clear isSearching if this is still the latest search
+            if (get().searchVersion === currentVersion) {
+                set({ isSearching: false });
+            }
         }
     },
 

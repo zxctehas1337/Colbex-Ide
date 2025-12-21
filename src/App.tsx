@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { Sidebar } from './components/layout/Sidebar';
 import { SearchPane } from './components/layout/Search/SearchPane';
+import { GitPane } from './components/layout/Git/GitPane';
 import { CodeEditor } from './components/layout/Editor';
 import { TerminalPanel } from './components/layout/TerminalPanel';
 import { MenuBar } from './components/layout/MenuBar';
@@ -101,6 +102,7 @@ function App() {
         {/* Sidebar - logic to show/hide based on activity could go here */}
         {showSidebar && activeActivity === 'files' && <Sidebar />}
         {showSidebar && activeActivity === 'search' && <SearchPane />}
+        {showSidebar && activeActivity === 'git' && <GitPane />}
 
         {/* Main Content Area */}
         <div className={styles.content}>

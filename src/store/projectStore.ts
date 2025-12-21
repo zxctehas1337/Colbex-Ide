@@ -13,6 +13,13 @@ interface CursorPosition {
     column: number;
 }
 
+export interface DiffTab {
+    id: string;
+    filePath: string;
+    fileName: string;
+    isStaged: boolean;
+}
+
 interface ProjectState {
     currentWorkspace: string | null;
     fileStructure: FileEntry[];
@@ -25,6 +32,9 @@ interface ProjectState {
     warnings: { [key: string]: number };
     unsavedChanges: { [key: string]: boolean };
     fileContents: { [key: string]: string };
+    // Diff tabs
+    openDiffTabs: DiffTab[];
+    activeDiffTab: string | null;
     setWorkspace: (path: string) => Promise<void>;
     openFile: (path: string) => void;
     closeFile: (path: string) => void;
@@ -36,6 +46,10 @@ interface ProjectState {
     setFileContent: (filePath: string, content: string) => void;
     saveFile: (filePath: string) => Promise<void>;
     markFileAsSaved: (filePath: string) => void;
+    // Diff tab actions
+    openDiffTab: (filePath: string, isStaged: boolean) => void;
+    closeDiffTab: (id: string) => void;
+    setActiveDiffTab: (id: string | null) => void;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -50,6 +64,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     warnings: {},
     unsavedChanges: {},
     fileContents: {},
+    openDiffTabs: [],
+    activeDiffTab: null,
 
     setWorkspace: async (path: string) => {
         try {
@@ -81,6 +97,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         set({
             openFiles: newOpenFiles,
             activeFile: path,
+            activeDiffTab: null,
             history: newHistory,
             historyIndex: newHistory.length - 1
         });
@@ -187,5 +204,56 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
                 [filePath]: false
             }
         });
+    },
+
+    openDiffTab: (filePath: string, isStaged: boolean) => {
+        const { openDiffTabs } = get();
+        const id = `diff:${filePath}:${isStaged ? 'staged' : 'unstaged'}`;
+        const fileName = filePath.split(/[\\/]/).pop() || filePath;
+        
+        // Check if already open
+        const existing = openDiffTabs.find(t => t.id === id);
+        if (existing) {
+            set({ activeDiffTab: id, activeFile: null });
+            return;
+        }
+        
+        set({
+            openDiffTabs: [...openDiffTabs, { id, filePath, fileName, isStaged }],
+            activeDiffTab: id,
+            activeFile: null
+        });
+    },
+
+    closeDiffTab: (id: string) => {
+        const { openDiffTabs, activeDiffTab, openFiles } = get();
+        const newDiffTabs = openDiffTabs.filter(t => t.id !== id);
+        
+        let newActiveDiffTab = activeDiffTab;
+        let newActiveFile = null;
+        
+        if (activeDiffTab === id) {
+            // Switch to another diff tab or regular file
+            if (newDiffTabs.length > 0) {
+                newActiveDiffTab = newDiffTabs[newDiffTabs.length - 1].id;
+            } else {
+                newActiveDiffTab = null;
+                newActiveFile = openFiles.length > 0 ? openFiles[openFiles.length - 1] : null;
+            }
+        }
+        
+        set({
+            openDiffTabs: newDiffTabs,
+            activeDiffTab: newActiveDiffTab,
+            activeFile: newActiveFile
+        });
+    },
+
+    setActiveDiffTab: (id: string | null) => {
+        if (id) {
+            set({ activeDiffTab: id, activeFile: null });
+        } else {
+            set({ activeDiffTab: null });
+        }
     },
 }));

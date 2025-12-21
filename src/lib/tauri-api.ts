@@ -78,6 +78,49 @@ export type ProblemsResult = {
     total_warnings: number;
 };
 
+export type GitFileStatus = {
+    path: string;
+    status: string;
+    is_staged: boolean;
+};
+
+export type GitInfo = {
+    branch: string;
+    is_clean: boolean;
+    modified_files: number;
+    untracked_files: number;
+    staged_files: number;
+    has_remote: boolean;
+    remote_name: string | null;
+    user_name: string | null;
+    user_email: string | null;
+};
+
+export type DiffLine = {
+    line_type: 'add' | 'delete' | 'context' | 'header' | 'hunk';
+    content: string;
+    old_line_no: number | null;
+    new_line_no: number | null;
+};
+
+export type FileDiff = {
+    file_path: string;
+    old_content: string;
+    new_content: string;
+    lines: DiffLine[];
+    is_new_file: boolean;
+    is_deleted: boolean;
+};
+
+export type GitContributor = {
+    name: string;
+    email: string;
+    commits_count: number;
+    branches: string[];
+    is_local: boolean;
+    avatar_url: string | null;
+};
+
 export const tauriApi = {
     readDir: (path: string) => invoke<any[]>('read_dir', { path }),
     readFile: (path: string) => invoke<string>('read_file', { path }),
@@ -86,9 +129,18 @@ export const tauriApi = {
     getAssetUrl: (path: string) => invoke<string>('get_asset_url', { path }),
     openFileDialog: () => invoke<string | null>('open_file_dialog'),
     openFolderDialog: () => invoke<string | null>('open_folder_dialog'),
-    gitStatus: (path: string) => invoke<any[]>('git_status', { path }),
-    gitInfo: (path: string) => invoke<any>('git_info', { path }),
+    // Git commands
+    gitStatus: (path: string) => invoke<GitFileStatus[]>('git_status', { path }),
+    gitInfo: (path: string) => invoke<GitInfo>('git_info', { path }),
     gitClone: (url: string, path: string) => invoke<void>('git_clone', { url, path }),
+    gitStage: (repoPath: string, filePath: string) => invoke<void>('git_stage', { repoPath, filePath }),
+    gitUnstage: (repoPath: string, filePath: string) => invoke<void>('git_unstage', { repoPath, filePath }),
+    gitStageAll: (repoPath: string) => invoke<void>('git_stage_all', { repoPath }),
+    gitUnstageAll: (repoPath: string) => invoke<void>('git_unstage_all', { repoPath }),
+    gitCommit: (repoPath: string, message: string) => invoke<string>('git_commit', { repoPath, message }),
+    gitDiscardChanges: (repoPath: string, filePath: string) => invoke<void>('git_discard_changes', { repoPath, filePath }),
+    gitDiff: (repoPath: string, filePath: string, isStaged: boolean) => invoke<FileDiff>('git_diff', { repoPath, filePath, isStaged }),
+    gitContributors: (repoPath: string) => invoke<GitContributor[]>('git_contributors', { repoPath }),
     searchInFiles: (root_path: string, options: SearchOptions) =>
         invoke<SearchResult[]>('search_in_files', { rootPath: root_path, options }),
     replaceAll: (root_path: string, options: SearchOptions, replace_query: string, preserve_case_flag: boolean) =>

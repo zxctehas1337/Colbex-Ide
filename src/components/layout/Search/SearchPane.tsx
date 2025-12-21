@@ -1,11 +1,14 @@
 
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useSearchStore } from '../../../store/searchStore';
 import { useProjectStore } from '../../../store/projectStore';
 import { ChevronRight, ChevronDown, MoreHorizontal, CaseSensitive, WholeWord, Regex, Replace } from 'lucide-react';
 import clsx from 'clsx';
 import { getFileIcon } from '../../../utils/fileIcons';
 import styles from './SearchPane.module.css';
+
+const INITIAL_VISIBLE_FILES = 50;
+const LOAD_MORE_COUNT = 30;
 
 export const SearchPane = () => {
     const {
@@ -19,6 +22,27 @@ export const SearchPane = () => {
     const { currentWorkspace, openFile, activeFile } = useProjectStore();
     const [showDetails, setShowDetails] = useState(false);
     const [replaceExpanded, setReplaceExpanded] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_FILES);
+    const resultsListRef = useRef<HTMLDivElement>(null);
+
+    // Reset visible count when results change
+    useEffect(() => {
+        setVisibleCount(INITIAL_VISIBLE_FILES);
+    }, [results]);
+
+    const visibleResults = useMemo(() => {
+        return results.slice(0, visibleCount);
+    }, [results, visibleCount]);
+
+    const hasMore = visibleCount < results.length;
+
+    const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+        const target = e.target as HTMLDivElement;
+        const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 200;
+        if (nearBottom && hasMore && !isSearching) {
+            setVisibleCount(prev => Math.min(prev + LOAD_MORE_COUNT, results.length));
+        }
+    }, [hasMore, isSearching, results.length]);
 
     const activeFileMatches = useMemo(() => {
         if (!activeFile) return null;
@@ -185,12 +209,18 @@ export const SearchPane = () => {
                 </div>
             )}
 
-            <div className={styles.resultsList}>
+            <div className={styles.resultsList} ref={resultsListRef} onScroll={handleScroll}>
                 {isSearching && <div style={{ padding: 16, textAlign: 'center', color: '#71717a' }}>Searching...</div>}
 
-                {!isSearching && results.map((result, i) => (
-                    <FileResult key={i} result={result} openFile={openFile} />
+                {!isSearching && visibleResults.map((result) => (
+                    <FileResult key={result.file.path} result={result} openFile={openFile} />
                 ))}
+                
+                {!isSearching && hasMore && (
+                    <div style={{ padding: 8, textAlign: 'center', color: '#71717a', fontSize: 12 }}>
+                        Showing {visibleCount} of {results.length} files (scroll for more)
+                    </div>
+                )}
             </div>
         </div>
     );

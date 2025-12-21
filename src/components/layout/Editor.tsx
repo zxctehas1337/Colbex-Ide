@@ -3,6 +3,7 @@ import Editor from '@monaco-editor/react';
 import { useProjectStore } from '../../store/projectStore';
 import { tauriApi } from '../../lib/tauri-api';
 import { ImageViewer } from './ImageViewer';
+import { DiffEditor } from './Git/DiffEditor';
 import styles from './Editor.module.css';
 
 // Editor configuration to match VS Code dark theme and performance settings
@@ -26,7 +27,7 @@ const editorOptions = {
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'bmp', 'tiff'];
 
 export const CodeEditor = () => {
-    const { activeFile, setCursorPosition, setFileContent, saveFile, fileContents, unsavedChanges } = useProjectStore();
+    const { activeFile, setCursorPosition, setFileContent, saveFile, fileContents, unsavedChanges, activeDiffTab, openDiffTabs, currentWorkspace } = useProjectStore();
     const [code, setCode] = useState("// Select a file to view");
     const [language, setLanguage] = useState("plaintext");
     const [isImage, setIsImage] = useState(false);
@@ -35,6 +36,9 @@ export const CodeEditor = () => {
     const monacoRef = useRef<any>(null);
     const decorationsRef = useRef<string[]>([]);
     const problemHighlightRef = useRef<string[]>([]);
+
+    // Find active diff tab data
+    const activeDiff = activeDiffTab ? openDiffTabs.find(t => t.id === activeDiffTab) : null;
 
     useEffect(() => {
         const loadFile = async () => {
@@ -179,6 +183,17 @@ export const CodeEditor = () => {
             window.removeEventListener('editor-clear-search-decorations', handleClearDecorations as any);
         };
     }, [activeFile]);
+
+    // Show diff editor if diff tab is active
+    if (activeDiff && currentWorkspace) {
+        return (
+            <DiffEditor 
+                filePath={activeDiff.filePath} 
+                isStaged={activeDiff.isStaged}
+                workspacePath={currentWorkspace}
+            />
+        );
+    }
 
     if (!activeFile) {
         return (

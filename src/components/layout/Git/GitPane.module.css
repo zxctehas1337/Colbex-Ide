@@ -1,0 +1,577 @@
+.gitPane {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 280px;
+    background-color: #18181b;
+    color: #e4e4e7;
+    border-right: 1px solid #27272a;
+    font-size: 13px;
+}
+
+.header {
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #a1a1aa;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.headerActions {
+    display: flex;
+    gap: 4px;
+}
+
+.headerBtn {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #a1a1aa;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.headerBtn:hover {
+    background-color: #3f3f46;
+    color: #e4e4e7;
+}
+
+.commitSection {
+    padding: 0 12px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.commitInput {
+    width: 100%;
+    min-height: 60px;
+    padding: 8px;
+    background-color: #27272a;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #f4f4f5;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+    outline: none;
+}
+
+.commitInput:focus {
+    border-color: #007fd4;
+}
+
+.commitInput::placeholder {
+    color: #71717a;
+}
+
+.commitBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background-color: #0e639c;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.commitBtn:hover {
+    background-color: #1177bb;
+}
+
+.commitBtn:disabled {
+    background-color: #3f3f46;
+    color: #71717a;
+    cursor: not-allowed;
+}
+
+.changesSection {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background-color: #1f1f22;
+    border-top: 1px solid #27272a;
+    border-bottom: 1px solid #27272a;
+    cursor: pointer;
+    user-select: none;
+}
+
+.sectionHeader:hover {
+    background-color: #252528;
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #e4e4e7;
+}
+
+.sectionCount {
+    background: #3f3f46;
+    padding: 0 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    color: #d4d4d8;
+}
+
+.sectionActions {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.sectionHeader:hover .sectionActions {
+    opacity: 1;
+}
+
+.sectionBtn {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #a1a1aa;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.sectionBtn:hover {
+    background-color: #3f3f46;
+    color: #e4e4e7;
+}
+
+.filesList {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.fileItem {
+    display: flex;
+    align-items: center;
+    padding: 4px 12px;
+    cursor: pointer;
+    gap: 6px;
+}
+
+.fileItem:hover {
+    background-color: #2a2a35;
+}
+
+.fileIcon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fileName {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.filePath {
+    color: #71717a;
+    font-size: 11px;
+    margin-left: 4px;
+}
+
+.fileStatus {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0 4px;
+    border-radius: 2px;
+}
+
+.statusM {
+    color: #e9a23b;
+}
+
+.statusU {
+    color: #73c991;
+}
+
+.statusD {
+    color: #f14c4c;
+}
+
+.statusA {
+    color: #73c991;
+}
+
+.fileActions {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.fileItem:hover .fileActions {
+    opacity: 1;
+}
+
+.fileActionBtn {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #a1a1aa;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.fileActionBtn:hover {
+    background-color: #3f3f46;
+    color: #e4e4e7;
+}
+
+.footer {
+    padding: 8px 12px;
+    border-top: 1px solid #27272a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #a1a1aa;
+    background-color: #1f1f22;
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.userAvatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #3f3f46;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #e4e4e7;
+}
+
+.branchInfo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.branchName {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    background-color: #27272a;
+    border-radius: 4px;
+    color: #73c991;
+    font-size: 11px;
+}
+
+.remoteIcon {
+    color: #007fd4;
+}
+
+.noRepo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 24px;
+    text-align: center;
+    color: #71717a;
+}
+
+.noRepoText {
+    margin-top: 12px;
+    font-size: 13px;
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #71717a;
+}
+
+.emptySection {
+    padding: 12px;
+    text-align: center;
+    color: #52525b;
+    font-size: 12px;
+}
+
+
+.diffLoading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.loadingSpinner {
+    color: #e4e4e7;
+    font-size: 14px;
+}
+
+
+/* Tabs */
+.tabs {
+    display: flex;
+    border-bottom: 1px solid #27272a;
+    background-color: #1f1f22;
+}
+
+.tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #71717a;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.tab:hover {
+    color: #a1a1aa;
+    background-color: #252528;
+}
+
+.tabActive {
+    color: #e4e4e7;
+    border-bottom-color: #007fd4;
+}
+
+/* Graph Section */
+.graphSection {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.repoInfo {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid #27272a;
+}
+
+.repoInfoItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.repoInfoLabel {
+    font-size: 11px;
+    color: #71717a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.branchBadge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background-color: #27272a;
+    border-radius: 4px;
+    color: #73c991;
+    font-size: 11px;
+}
+
+.repoBadge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background-color: #27272a;
+    border-radius: 4px;
+    color: #a1a1aa;
+    font-size: 11px;
+}
+
+/* Contributors Section */
+.contributorsSection {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.contributorsList {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.contributorItem {
+    display: flex;
+    align-items: flex-start;
+    padding: 10px 12px;
+    gap: 10px;
+    border-bottom: 1px solid #1f1f22;
+}
+
+.contributorItem:hover {
+    background-color: #2a2a35;
+}
+
+.contributorAvatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #3f3f46;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.contributorAvatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatarFallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a1a1aa;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.contributorInfo {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.contributorName {
+    font-size: 13px;
+    color: #e4e4e7;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.youBadge {
+    font-size: 9px;
+    padding: 1px 4px;
+    background-color: #0e639c;
+    color: #fff;
+    border-radius: 3px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.contributorEmail {
+    font-size: 11px;
+    color: #71717a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contributorMeta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.commitsCount {
+    font-size: 10px;
+    color: #a1a1aa;
+}
+
+.branchesList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.branchTag {
+    font-size: 9px;
+    padding: 1px 4px;
+    background-color: #27272a;
+    color: #73c991;
+    border-radius: 3px;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.moreBranches {
+    font-size: 9px;
+    padding: 1px 4px;
+    background-color: #27272a;
+    color: #71717a;
+    border-radius: 3px;
+}

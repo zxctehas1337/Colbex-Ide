@@ -206,3 +206,16 @@
 .closeButton:hover .unsavedDot {
   opacity: 0;
 }
+
+
+/* Diff Label */
+.diffLabel {
+  font-size: 11px;
+  color: #808080;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.tabActive .diffLabel {
+  color: #a0a0a0;
+}
