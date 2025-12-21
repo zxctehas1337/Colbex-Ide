@@ -1,0 +1,158 @@
+.root {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  pointer-events: auto;
+}
+
+.brand {
+  margin-right: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.brandIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.menuItemWrap {
+  position: relative;
+}
+
+.menuItem {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+  -webkit-app-region: no-drag;
+}
+
+.menuItemActive {
+  background: #333333;
+  color: #ffffff;
+}
+
+.menuItemInactive:hover {
+  background: #333333;
+  color: #ffffff;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 16rem;
+  background: #252526;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  border: 1px solid #454545;
+  border-bottom-left-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+  padding: 0.25rem 0;
+  z-index: 50;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.375rem 1rem;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+  -webkit-app-region: no-drag;
+}
+
+.dropdownItem:hover {
+  background: #094771;
+  color: #ffffff;
+}
+
+.dropdownLabel {
+  color: #d1d5db;
+  transition: color 150ms ease;
+}
+
+.dropdownItem:hover .dropdownLabel {
+  color: #ffffff;
+}
+
+.dropdownShortcut {
+  color: #6b7280;
+  font-size: 10px;
+  margin-left: 1rem;
+  transition: color 150ms ease;
+}
+
+.dropdownItem:hover .dropdownShortcut {
+  color: #e5e7eb;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1.5rem;
+}
+
+.iconButton {
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  color: #9ca3af;
+  transition: background-color 150ms ease, color 150ms ease;
+  -webkit-app-region: no-drag;
+}
+
+.iconButton:hover {
+  background: #333333;
+  color: #ffffff;
+}
+
+.iconSm {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.searchTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  width: 45vw;
+  max-width: 850px;
+  background: #2a2a2a;
+  border: 1px solid #3c3c3c;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #d1d5db;
+  transition: background-color 150ms ease;
+  -webkit-app-region: no-drag;
+}
+
+.searchTrigger:hover {
+  background: #333333;
+}
+
+.searchIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: #6b7280;
+  transition: color 150ms ease;
+}
+
+.searchTrigger:hover .searchIcon {
+  color: #9ca3af;
+}
+
+.searchText {
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brandAfterSearch {
+  margin-left: 0rem;
+  display: flex;
+  align-items: center;
+}

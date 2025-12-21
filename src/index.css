@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Decorum Window Controls */
+div[data-tauri-decorum-tb] {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+button.decorum-tb-btn {
+  background: transparent !important;
+  border: none !important;
+  color: #cccccc !important;
+  transition: background 0.2s ease, color 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0.8;
+  height: 100% !important;
+  width: 45px !important;
+  z-index: 100 !important;
+  -webkit-app-region: no-drag !important;
+  cursor: default !important;
+}
+
+@media (min-width: 1024px) {
+  button.decorum-tb-btn {
+    position: absolute !important;
+    top: 0;
+  }
+
+  button#decorum-tb-minimize {
+    right: 90px !important;
+  }
+
+  button#decorum-tb-maximize,
+  button#decorum-tb-restore {
+    right: 45px !important;
+  }
+
+  button#decorum-tb-close {
+    right: 0 !important;
+  }
+}
+
+button.decorum-tb-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  opacity: 1;
+}
+
+button#decorum-tb-close:hover {
+  background: #e81123 !important;
+  color: white !important;
+}
+
+/* Add padding to the top of the app content to prevent overlap */
+#root {
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+@layer base {
+  :root {
+    --background: 240 10% 4%;
+    --foreground: 210 40% 98%;
+
+    --card: 240 10% 4%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 240 10% 4%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 4%;
+    --foreground: 210 40% 98%;
+
+    --card: 240 10% 4%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 240 10% 4%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Segoe UI", SegoeUI, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    overflow: hidden;
+    /* Prevent scrolling on the main window */
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #424242;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4f4f4f;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.colbex-search-match {
+  background-color: rgba(255, 170, 0, 0.22);
+  border-radius: 3px;
+}
+
+/* Problem line highlight - shows when clicking on a problem */
+.problem-line-highlight {
+  background-color: rgba(255, 200, 0, 0.15) !important;
+  border-left: 3px solid #f59e0b !important;
+}

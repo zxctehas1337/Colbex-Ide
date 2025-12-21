@@ -1,0 +1,49 @@
+{
+  "name": "colbex",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@fortawesome/free-brands-svg-icons": "^7.1.0",
+    "@fortawesome/free-regular-svg-icons": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.1",
+    "@iconify-icons/vscode-icons": "^1.2.29",
+    "@iconify/react": "^6.0.2",
+    "@monaco-editor/react": "^4.6.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-opener": "^2",
+    "@types/react-file-icon": "^1.0.4",
+    "@vscode/codicons": "^0.0.44",
+    "clsx": "^2.1.0",
+    "file-icons-js": "^1.1.0",
+    "framer-motion": "^12.0.0",
+    "ico": "^0.3.3",
+    "jimp": "^1.6.0",
+    "lucide-react": "^0.479.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-file-icon": "^1.6.0",
+    "tailwind-merge": "^3.0.0",
+    "tailwindcss-animate": "^1.0.7",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "typescript": "~5.8.3",
+    "vite": "^7.0.4"
+  }
+}

@@ -1,0 +1,130 @@
+.menuBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 2.25rem;
+  background: #1e1e1e;
+  border-bottom: 1px solid #333333;
+  padding: 0 0 0 0.5rem;
+  font-size: 0.75rem;
+  z-index: 1000;
+  color: #cccccc;
+  position: relative;
+  pointer-events: auto;
+}
+
+.macos {
+  padding-left: 4.5rem;
+}
+
+.windows {
+  display: flex;
+}
+
+.center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 0.25rem;
+  -webkit-app-region: drag;
+  min-width: 0;
+}
+
+.navGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
+  max-width: 100%;
+  justify-content: center;
+  -webkit-app-region: drag;
+  flex: 1;
+}
+
+.navButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  -webkit-app-region: no-drag;
+}
+
+.navBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 4px;
+  color: #858585;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+}
+
+.navBtn:hover {
+  background: #2d2d2d;
+  color: #ffffff;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #252526;
+  border: 1px solid #333333;
+  border-radius: 6px;
+  padding: 0 0.75rem;
+  height: 1.75rem;
+  width: 500px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.searchBar:hover {
+  background: #2d2d2d;
+  border-color: #454545;
+}
+
+.searchIcon {
+  color: #858585;
+  flex-shrink: 0;
+}
+
+.searchText {
+  font-size: 11px;
+  color: #999999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  text-align: center;
+}
+
+.rightGroup {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+  height: 100%;
+  padding-left: 0.5rem;
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+.decorumHost {
+  width: 135px;
+  height: 100%;
+  flex-shrink: 0;
+  position: relative;
+  -webkit-app-region: no-drag;
+  pointer-events: auto;
+}
+
+.titleText {
+  opacity: 0.8;
+  font-weight: 400;
+}

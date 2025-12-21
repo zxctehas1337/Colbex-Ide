@@ -1,0 +1,155 @@
+.container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: #1e1e1e;
+    overflow: hidden;
+}
+
+.tableWrapper {
+    flex: 1;
+    overflow: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.table thead {
+    position: sticky;
+    top: 0;
+    background: #252526;
+    z-index: 1;
+}
+
+.table th {
+    text-align: left;
+    padding: 8px 12px;
+    color: #cccccc;
+    font-weight: 500;
+    border-bottom: 1px solid #3e3e42;
+    white-space: nowrap;
+}
+
+.table td {
+    padding: 6px 12px;
+    color: #cccccc;
+    border-bottom: 1px solid #2d2d30;
+    vertical-align: middle;
+}
+
+.table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.portColumn {
+    width: 200px;
+    min-width: 200px;
+}
+
+.filterInput {
+    width: 100%;
+    padding: 4px 8px;
+    background: #3c3c3c;
+    border: 1px solid #007acc;
+    border-radius: 2px;
+    color: #cccccc;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+}
+
+.filterInput::placeholder {
+    color: #858585;
+}
+
+.filterInput:focus {
+    border-color: #007acc;
+    box-shadow: 0 0 0 1px #007acc;
+}
+
+.portCell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.portNumber {
+    color: #4fc1ff;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-weight: 500;
+}
+
+.protocol {
+    font-size: 11px;
+    color: #858585;
+    background: #3c3c3c;
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+.addressCell {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    color: #9cdcfe;
+}
+
+.processCell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pid {
+    font-size: 11px;
+    color: #858585;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.originCell {
+    color: #6a9955;
+}
+
+.emptyRow {
+    text-align: center;
+    color: #858585;
+    padding: 24px !important;
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #858585;
+    font-size: 13px;
+}
+
+.error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    height: 100%;
+    color: #f14c4c;
+    font-size: 13px;
+}
+
+.retryButton {
+    padding: 6px 12px;
+    background: #007acc;
+    color: #ffffff;
+    border: none;
+    border-radius: 2px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+.retryButton:hover {
+    background: #1177bb;
+}

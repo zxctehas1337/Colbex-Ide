@@ -1,0 +1,332 @@
+.sidebar {
+  width: 16rem;
+  max-width: 16rem;
+  min-width: 16rem;
+  height: 100%;
+  background: #252526;
+  border-right: 1px solid #1e1e1e;
+  display: flex;
+  flex-direction: column;
+  color: #ffffff;
+  overflow: hidden;
+  contain: layout;
+  flex-shrink: 0;
+  transition: width 0.2s ease, min-width 0.2s ease;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 12rem;
+    max-width: 12rem;
+    min-width: 12rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: 0;
+    min-width: 0;
+    border-right: none;
+  }
+}
+
+.header {
+  padding: 0.625rem 1.25rem;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #bbbbbb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  opacity: 0.7;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5rem;
+  width: 100%;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.25rem;
+  background: #252526;
+  cursor: pointer;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background-color 150ms ease;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.sectionHeader:hover {
+  background: #2a2d2e;
+}
+
+.sectionHeaderRight {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #cccccc;
+}
+
+.chev {
+  margin-right: 0.25rem;
+}
+
+.openEditorsList {
+  padding: 0.25rem 0;
+}
+
+.openEditorRow {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 150ms ease;
+  color: #cccccc;
+}
+
+.openEditorRow:hover {
+  background: #2a2d2e;
+}
+
+.openEditorRowActive {
+  background: #37373d;
+  color: #ffffff;
+}
+
+.openEditorIcon {
+  margin-right: 0.5rem;
+  opacity: 0.7;
+}
+
+.openEditorName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.closeBtn {
+  opacity: 0;
+  padding: 0.125rem;
+  border-radius: 0.25rem;
+  transition: opacity 150ms ease, background-color 150ms ease;
+}
+
+.openEditorRow:hover .closeBtn {
+  opacity: 1;
+}
+
+.closeBtn:hover {
+  background: #454545;
+}
+
+.projectHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.25rem;
+  background: #252526;
+  cursor: pointer;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background-color 150ms ease;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.projectHeader:hover {
+  background: #2a2d2e;
+}
+
+.projectActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #cccccc;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  padding-right: 0.25rem;
+}
+
+.projectHeader:hover .projectActions {
+  opacity: 1;
+}
+
+.projectActionBtn {
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+}
+
+.projectActionBtn:hover {
+  background: #37373d;
+}
+
+.tree {
+  padding: 0.25rem 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.noWorkspace {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.noWorkspaceText {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+  font-weight: 300;
+}
+
+.openFolderBtn {
+  width: 100%;
+  padding: 0.375rem 0;
+  background: #0e639c;
+  border-radius: 2px;
+  font-size: 0.875rem;
+  color: #ffffff;
+  transition: background-color 150ms ease;
+}
+
+.openFolderBtn:hover {
+  background: #1177ba;
+}
+
+.fileItemWrap {
+  user-select: none;
+}
+
+.fileRow {
+  --depth: 0;
+  display: flex;
+  align-items: center;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  padding-left: calc(var(--depth) * 8px + 8px);
+  padding-right: 8px;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+  font-size: 13px;
+  position: relative;
+  color: #cccccc;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fileRow:hover {
+  background: #2a2d2e;
+}
+
+.fileRowActive {
+  background: #37373d;
+  color: #ffffff;
+}
+
+.fileRowSticky {
+  background: #252526;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.fileRowStickyActive {
+  background: #37373d;
+}
+
+.activeIndicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #007acc;
+}
+
+.chevronSlot {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 2px;
+  opacity: 0.7;
+  flex-shrink: 0;
+  transition: opacity 150ms ease;
+  min-width: 16px;
+}
+
+.fileRow:hover .chevronSlot {
+  opacity: 1;
+}
+
+.placeholderChevron {
+  width: 14px;
+}
+
+.iconSlot {
+  margin-right: 0.25rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.125rem 0;
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.childrenWrap {
+  overflow: hidden;
+  position: relative;
+}
+
+.nestingLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--depth) * 8px + 16px);
+  width: 1px;
+  background: rgba(255, 255, 255, 0.03);
+  pointer-events: none;
+}
+
+.childrenRow {
+  --depth: 0;
+}
