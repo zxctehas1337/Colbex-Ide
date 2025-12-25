@@ -67,6 +67,36 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, positi
         }
     }, [isOpen]);
 
+<<<<<<< Updated upstream
+=======
+    // Handle keyboard navigation and actions
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!isOpen) return;
+            
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const currentItems = isGoToFileMode ? allFilesFiltered : [...shortcuts, ...files];
+                const selectedItem = currentItems[selectedIndex];
+                
+                if (selectedItem) {
+                    if (isGoToFileMode) {
+                        openFile((selectedItem as any).path);
+                    } else if ('action' in selectedItem && typeof selectedItem.action === 'function') {
+                        selectedItem.action();
+                    } else if ('path' in selectedItem) {
+                        openFile((selectedItem as any).path);
+                    }
+                    onClose();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, selectedIndex, isGoToFileMode, allFilesFiltered, shortcuts, files, openFile, onClose]);
+
+>>>>>>> Stashed changes
     const loadAllFiles = async () => {
         if (currentWorkspace) {
             try {

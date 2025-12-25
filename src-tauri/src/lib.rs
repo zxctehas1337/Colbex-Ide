@@ -2,7 +2,19 @@ mod fs;
 mod git_commands;
 mod ports;
 mod problems;
+<<<<<<< Updated upstream
 mod terminal;
+=======
+mod timeline;
+mod ollama;
+mod agentrouter;
+mod openai;
+mod anthropic;
+mod google;
+mod xai;
+mod api_keys;
+mod proxy_config;
+>>>>>>> Stashed changes
 
 use tauri::Manager;
 use tauri_plugin_decorum::WebviewWindowExt;

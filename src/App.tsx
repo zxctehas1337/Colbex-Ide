@@ -16,10 +16,86 @@ import { useUIStore } from './store/uiStore';
 import styles from './App.module.css';
 
 function App() {
+<<<<<<< Updated upstream
   const [activeActivity, setActiveActivity] = useState<'files' | 'search' | 'git' | 'debug' | 'remote' | 'extensions'>('files');
   const { showTerminal, toggleTerminal, showSidebar } = useUIStore();
   const { activeFile, closeFile } = useProjectStore();
   const { isAssistantOpen, toggleAssistant } = useAIStore();
+=======
+  const [activeActivity, setActiveActivity] = useState<ActivityId>('files');
+  const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
+  const { showTerminal, openPorts, setTerminalOpen, showSidebar, zoomLevel, zoomIn, zoomOut, resetZoom, aiPanelWidth, setAIPanelWidth } = useUIStore();
+  const uiStore = useUIStore();
+  const { activeFile, closeFile, openSettingsTab, openProfilesTab, setWorkspace, currentWorkspace, openFileDialog, newFile, newTextFile, newFileWithExtension, createCustomFile } = useProjectStore();
+  const { toggleAssistant, isAssistantOpen, initializeAgentRouter, initializeModels, initializeApiKeys } = useAIStore();
+  const { selectAll } = useEditorStore();
+  const { saveOnFocusLoss, saveAllUnsaved } = useAutoSaveStore();
+  const fsRefreshTimerRef = useRef<number | null>(null);
+  
+  // Initialize resizable panel for AI assistant
+  const aiPanel = useResizablePanel({
+    defaultWidth: aiPanelWidth,
+    minWidth: 300,
+    maxWidth: 800,
+    direction: 'left',
+    onResize: setAIPanelWidth
+  });
+  
+  // Sync store width with hook when it changes
+  useEffect(() => {
+    if (Math.abs(aiPanel.width - aiPanelWidth) > 1) {
+      setAIPanelWidth(aiPanel.width);
+    }
+  }, [aiPanel.width, aiPanelWidth, setAIPanelWidth]);
+
+  // Helper function to check if editor is focused
+  const isEditorFocused = () => {
+    return document.activeElement?.closest('.monaco-editor') !== null;
+  };
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${zoomLevel * 100}%`;
+  }, [zoomLevel]);
+
+  // Handle initial state from CLI arguments and load last workspace
+  useEffect(() => {
+    console.log('App useEffect for initialization called');
+    const initializeApp = async () => {
+      try {
+        console.log('App initialization starting...');
+        // Initialize AI models
+        console.log('About to call initializeModels...');
+        await initializeModels();
+        console.log('initializeModels completed');
+        
+        // Initialize API keys from backend
+        console.log('About to call initializeApiKeys...');
+        await initializeApiKeys();
+        console.log('initializeApiKeys completed');
+        
+        // Initialize AgentRouter if API key is already set
+        initializeAgentRouter();
+        
+        // First try to get initial state from CLI arguments
+        const state = await tauriApi.getInitialState();
+        if (state.workspace) {
+          await setWorkspace(state.workspace);
+          return;
+        }
+        
+        // If no workspace from CLI, try to load last workspace
+        const workspaceInitialized = await useProjectStore.getState().initWorkspace();
+        
+        if (!workspaceInitialized) {
+          console.log('No previous workspace found');
+        }
+      } catch (err) {
+        console.error('Failed to initialize app:', err);
+      }
+    };
+    
+    initializeApp();
+  }, [setWorkspace, initializeAgentRouter, initializeModels, initializeApiKeys]);
+>>>>>>> Stashed changes
 
   useEffect(() => {
     const unlisten = listen('select-all', () => {

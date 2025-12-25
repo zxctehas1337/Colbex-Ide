@@ -18,7 +18,14 @@ export const GitPane = () => {
     } = useGitStore();
     
     const [changesOpen, setChangesOpen] = useState(true);
+<<<<<<< Updated upstream
     const [contributorsOpen, setContributorsOpen] = useState(true);
+=======
+    const [hoveredCommit, setHoveredCommit] = useState<GitCommit | null>(null);
+    const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ x: 0, y: 0 });
+    const [isTooltipHovered, setIsTooltipHovered] = useState(false);
+    const hideTimeoutRef = useRef<number | null>(null);
+>>>>>>> Stashed changes
 
     useEffect(() => {
         if (currentWorkspace) {

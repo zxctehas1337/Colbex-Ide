@@ -24,6 +24,17 @@
     animation: fadeIn 0.1s ease-out;
 }
 
+.header {
+    display: flex;
+    flex-direction: column;
+}
+
+.headerTop {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .searchInput {
     background-color: #252526;
     border: none;
@@ -33,10 +44,62 @@
     font-size: 14px;
     outline: none;
     border-radius: 6px 6px 0 0;
+    flex: 1;
 }
 
 .searchInput::placeholder {
     color: #808080;
+}
+
+.selectionBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background-color: #04395e;
+    border-bottom: 1px solid #333;
+}
+
+.selectionCount {
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.deleteSelectedBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.deleteSelectedBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.deleteAllBtn {
+    background: none;
+    border: none;
+    color: #ff6b6b;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-right: 8px;
+}
+
+.deleteAllBtn:hover {
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff5252;
 }
 
 .listContainer {
@@ -59,11 +122,22 @@
     cursor: pointer;
     font-size: 13px;
     color: #cccccc;
+    user-select: none;
+    position: relative;
 }
 
 .item:hover, .itemActive {
     background-color: #04395e;
     color: white;
+}
+
+.item.selected {
+    background-color: #094771;
+    color: white;
+}
+
+.item.selected:hover {
+    background-color: #0a5585;
 }
 
 .itemTitle {
@@ -73,6 +147,17 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    flex: 1;
+}
+
+.checkbox {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4d9fff;
+    flex-shrink: 0;
 }
 
 .itemModel {
@@ -99,10 +184,15 @@
     cursor: pointer;
     padding: 4px;
     border-radius: 4px;
+    transition: opacity 0.2s;
 }
 
-.item:hover .deleteBtn {
+.item:hover .deleteBtn, .item.selected .deleteBtn {
     opacity: 1;
+}
+
+.item.selected .deleteBtn {
+    color: #ffffff;
 }
 
 .deleteBtn:hover {

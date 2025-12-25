@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "build:msi": "tauri build --target msi",
+    "build:deb": "tauri build --target deb",
+    "build:appimage": "tauri build --target appimage",
+    "build:all": "tauri build --target msi,deb,appimage"
   },
   "dependencies": {
     "@fortawesome/free-brands-svg-icons": "^7.1.0",
@@ -22,15 +26,19 @@
     "@tauri-apps/plugin-opener": "^2",
     "@types/react-file-icon": "^1.0.4",
     "@vscode/codicons": "^0.0.44",
+    "axios": "^1.13.2",
     "clsx": "^2.1.0",
     "file-icons-js": "^1.1.0",
     "framer-motion": "^12.0.0",
     "ico": "^0.3.3",
     "jimp": "^1.6.0",
     "lucide-react": "^0.479.0",
+    "openai": "^6.15.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-file-icon": "^1.6.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.0.0",
     "tailwindcss-animate": "^1.0.7",
     "zustand": "^5.0.3"

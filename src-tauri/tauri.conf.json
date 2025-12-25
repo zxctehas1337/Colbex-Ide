@@ -32,10 +32,25 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["msi", "deb", "appimage"],
     "icon": [
       "icons/icon.png",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "wix": {
+        "language": ["en-US", "ru-RU"],
+        "template": "main.wxs"
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libgtk-3-0", "libwebkit2gtk-4.0-37", "libayatana-appindicator3-1"],
+        "desktopTemplate": "colbex.desktop"
+      },
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    }
   }
 }
