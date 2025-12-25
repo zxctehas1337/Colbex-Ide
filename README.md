@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="public/icon2.png" alt="Colbex Logo" width="128" height="128">
+<img src="public/icon.ico" alt="Colbex Logo" width="128" height="128">
 
 **Современный кроссплатформенный редактор кода с интегрированным AI-ассистентом**
 
