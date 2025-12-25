@@ -17,7 +17,7 @@ export const MenuLeft = ({
     return (
         <div className={styles.root}>
             <div className={styles.brand}>
-                <img src="/icon.ico" alt="Colbex" className={styles.brandIcon} />
+                <img src="/icon.ico" alt="Colbex" className={styles.brandIcon} draggable={false} onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()} />
             </div>
             {menuStructure.map((category) => (
                 <div key={category.label} className={clsx(styles.menuItemWrap, "hidden lg:block")}>

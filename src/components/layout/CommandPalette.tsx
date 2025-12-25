@@ -13,6 +13,8 @@ import { useProjectStore } from '../../store/projectStore';
 import { tauriApi } from '../../lib/tauri-api';
 import clsx from 'clsx';
 import styles from './CommandPalette.module.css';
+import { SearchModal } from './Search/SearchModal';
+import { SymbolModal } from './Search/SymbolModal';
 
 interface CommandPaletteProps {
     isOpen: boolean;
@@ -26,6 +28,8 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, positi
     const { history, openFile, currentWorkspace } = useProjectStore();
     const [allFiles, setAllFiles] = useState<any[]>([]);
     const [isGoToFileMode, setIsGoToFileMode] = useState(false);
+    const [showSearchModal, setShowSearchModal] = useState(false);
+    const [showSymbolModal, setShowSymbolModal] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
 
     const uniqueHistory = Array.from(new Set(history)).reverse();
@@ -47,12 +51,56 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, positi
     );
 
     const shortcuts = [
-        { label: 'Go to File', shortcut: 'Ctrl + P', icon: <File className={styles.iconMd} /> },
-        { label: 'Show and Run Commands', shortcut: 'Ctrl + Shift + P', icon: <ArrowRight className={styles.iconMd} /> },
-        { label: 'Search for Text %', icon: <Search className={styles.iconMd} /> },
-        { label: 'Go to Symbol in Editor @', shortcut: 'Ctrl + Shift + O', icon: <Code className={styles.iconMd} /> },
-        { label: 'Start Debugging debug', icon: <Bug className={styles.iconMd} /> },
-        { label: 'Run Task task', icon: <Terminal className={styles.iconMd} /> },
+        { 
+            label: 'Go to File', 
+            shortcut: 'Ctrl + P', 
+            icon: <File className={styles.iconMd} />,
+            action: () => {
+                setIsGoToFileMode(true);
+                setSearchQuery('');
+                inputRef.current?.focus();
+            }
+        },
+        { 
+            label: 'Show and Run Commands', 
+            shortcut: 'Ctrl + Shift + P', 
+            icon: <ArrowRight className={styles.iconMd} />,
+            action: () => {
+                // Handle command palette commands
+            }
+        },
+        { 
+            label: 'Search for Text %', 
+            icon: <Search className={styles.iconMd} />,
+            action: () => {
+                setShowSearchModal(true);
+                onClose();
+            }
+        },
+        { 
+            label: 'Go to Symbol in Editor @', 
+            shortcut: 'Ctrl + Shift + O', 
+            icon: <Code className={styles.iconMd} />,
+            action: () => {
+                console.log('Go to Symbol action triggered');
+                setShowSymbolModal(true);
+                onClose();
+            }
+        },
+        { 
+            label: 'Start Debugging debug', 
+            icon: <Bug className={styles.iconMd} />,
+            action: () => {
+                // Handle start debugging
+            }
+        },
+        { 
+            label: 'Run Task task', 
+            icon: <Terminal className={styles.iconMd} />,
+            action: () => {
+                // Handle run task
+            }
+        },
     ].filter(s => s.label.toLowerCase().includes(searchQuery.toLowerCase()));
 
     useEffect(() => {
@@ -67,8 +115,6 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, positi
         }
     }, [isOpen]);
 
-<<<<<<< Updated upstream
-=======
     // Handle keyboard navigation and actions
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,7 +142,6 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, positi
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, selectedIndex, isGoToFileMode, allFilesFiltered, shortcuts, files, openFile, onClose]);
 
->>>>>>> Stashed changes
     const loadAllFiles = async () => {
         if (currentWorkspace) {
             try {
@@ -108,7 +153,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, positi
         }
     };
 
-    // Close on escape
+    // Close on escape and handle navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -125,10 +170,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, positi
                 e.stopPropagation();
                 const currentItems = isGoToFileMode ? allFilesFiltered : [...shortcuts, ...files];
                 setSelectedIndex(prev => (prev - 1 + currentItems.length) % currentItems.length);
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
                 e.stopPropagation();
-                const currentItems = isGoToFileMode ? allFilesFiltered : [...shortcuts, ...files];
                 const selectedItem = currentItems[selectedIndex];
                 
                 if (selectedItem) {
@@ -157,6 +199,26 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, positi
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose, isGoToFileMode, allFilesFiltered, shortcuts, files, selectedIndex]);
 
+    // Handle special character input (@ for symbols)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!isOpen) return;
+            
+            // Handle @ symbol for go to symbol
+            if (e.key === '@' && document.activeElement === inputRef.current) {
+                e.preventDefault();
+                setShowSymbolModal(true);
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+        }
+
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
+
     // Check if we should enter "Go to file" mode
     useEffect(() => {
         if (searchQuery.length > 0) {
@@ -168,8 +230,9 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, positi
     }, [searchQuery]);
 
     return (
-        <AnimatePresence>
-            {isOpen && (
+        <>
+            <AnimatePresence>
+                {isOpen && (
                 <div className={styles.overlayRoot}>
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -251,6 +314,8 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, positi
                                                         if (item.label === 'Go to File') {
                                                             setIsGoToFileMode(true);
                                                             setSearchQuery('');
+                                                        } else if ('action' in item && typeof item.action === 'function') {
+                                                            item.action();
                                                         }
                                                     }}
                                                     onMouseEnter={() => setSelectedIndex(idx)}
@@ -315,8 +380,21 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, positi
                         </div>
                     </motion.div>
                 </div>
+                )}
+            </AnimatePresence>
+            {showSearchModal && (
+                <SearchModal 
+                    isOpen={showSearchModal} 
+                    onClose={() => setShowSearchModal(false)} 
+                />
             )}
-        </AnimatePresence>
+            {showSymbolModal && (
+                <SymbolModal 
+                    isOpen={showSymbolModal} 
+                    onClose={() => setShowSymbolModal(false)} 
+                />
+            )}
+        </>
     );
 };
 

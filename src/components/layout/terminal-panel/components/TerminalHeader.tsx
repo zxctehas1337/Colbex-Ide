@@ -1,9 +1,9 @@
 import clsx from 'clsx';
-import styles from '../TerminalPanel.module.css';
-import { TerminalActionDropdown } from './TerminalActionDropdown';
-import { EllipsisIcon, MaximizeIcon, CloseIcon } from '../Icons';
+import styles from '../styles';
+import { MaximizeIcon, CloseIcon } from '../Icons';
+import { useUIStore } from '../../../../store/uiStore';
 
-type TabId = 'problems' | 'output' | 'debug' | 'terminal' | 'ports';
+type TabId = 'problems' | 'output' | 'debug' | 'ports';
 
 interface Tab {
     id: TabId;
@@ -14,27 +14,20 @@ interface Tab {
 interface TerminalHeaderProps {
     activeTab: TabId;
     setActiveTab: (tab: TabId) => void;
-    showActionDropdown: boolean;
-    setShowActionDropdown: (show: boolean) => void;
-    showTerminalSidebar: boolean;
-    setShowTerminalSidebar: (show: boolean) => void;
     problemsCount?: number;
 }
 
 export const TerminalHeader = ({
     activeTab,
     setActiveTab,
-    showActionDropdown,
-    setShowActionDropdown,
-    showTerminalSidebar,
-    setShowTerminalSidebar,
     problemsCount = 0,
 }: TerminalHeaderProps) => {
+    const { setTerminalOpen } = useUIStore();
+    
     const tabs: Tab[] = [
         { id: 'problems', label: 'Problems', badge: problemsCount > 0 ? problemsCount : undefined },
         { id: 'output', label: 'Output' },
         { id: 'debug', label: 'Debug Console' },
-        { id: 'terminal', label: 'Terminal' },
         { id: 'ports', label: 'Ports' },
     ];
 
@@ -54,23 +47,14 @@ export const TerminalHeader = ({
             </div>
 
             <div className={styles.controls}>
-                <TerminalActionDropdown
-                    activeTab={activeTab}
-                    showActionDropdown={showActionDropdown}
-                    setShowActionDropdown={setShowActionDropdown}
-                />
-
-                <button
-                    className={styles.actionButton}
-                    onClick={() => setShowTerminalSidebar(!showTerminalSidebar)}
-                    title="Toggle Terminal List"
-                >
-                    <EllipsisIcon />
-                </button>
                 <button className={styles.actionButton} title="Maximize">
                     <MaximizeIcon />
                 </button>
-                <button className={styles.actionButton} title="Close">
+                <button 
+                    className={styles.actionButton} 
+                    title="Close"
+                    onClick={() => setTerminalOpen(false)}
+                >
                     <CloseIcon />
                 </button>
             </div>

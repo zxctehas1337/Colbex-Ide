@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useProjectStore } from '../../store/projectStore';
+import { useEditorStore } from '../../store/editorStore';
+import { useAutoSaveStore } from '../../store/autoSaveStore';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import CommandPalette from './CommandPalette';
 import { ArrowLeft, ArrowRight, Search } from 'lucide-react';
@@ -11,15 +13,19 @@ import styles from './MenuBar.module.css';
 
 interface MenuBarProps {
     onOpenSettings?: () => void;
+    onOpenKeyboardShortcuts?: () => void;
+    onOpenProfiles?: () => void;
 }
 
-export const MenuBar = ({ onOpenSettings }: MenuBarProps) => {
+export const MenuBar = ({ onOpenSettings, onOpenKeyboardShortcuts, onOpenProfiles }: MenuBarProps) => {
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
     const [palettePosition, setPalettePosition] = useState<{ top: number; left: number } | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLDivElement>(null);
-    const { setWorkspace, openFile, activeFile, navigateHistory } = useProjectStore();
+    const { setWorkspace, openFile, activeFile, navigateHistory, openNewFileModal } = useProjectStore();
+    const { selectAll, save, saveAs } = useEditorStore();
+    const autoSaveStore = useAutoSaveStore();
     const window = getCurrentWindow();
     const isMacOS = navigator.userAgent.toLowerCase().includes('mac');
     const isWindows = navigator.userAgent.toLowerCase().includes('win');
@@ -39,11 +45,32 @@ export const MenuBar = ({ onOpenSettings }: MenuBarProps) => {
             }
         };
 
+        const handleCopy = (e: ClipboardEvent) => {
+            const target = e.target as HTMLElement;
+            if (menuRef.current?.contains(target)) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+
+        const handleContextMenu = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (menuRef.current?.contains(target)) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+
         document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keydown', handleKeyDown, true);
+        document.addEventListener('copy', handleCopy);
+        document.addEventListener('contextmenu', handleContextMenu);
+        
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('keydown', handleKeyDown, true);
+            document.removeEventListener('copy', handleCopy);
+            document.removeEventListener('contextmenu', handleContextMenu);
         };
     }, []);
 
@@ -71,13 +98,16 @@ export const MenuBar = ({ onOpenSettings }: MenuBarProps) => {
         setIsPaletteOpen(true);
     };
 
-
-
     const menuStructure = createMenuStructure({
         setWorkspace,
         openFile,
         window,
         handlePaletteOpen,
+        selectAll,
+        save,
+        saveAs,
+        openNewFileModal,
+        autoSaveStore,
     });
 
     const currentFileName = activeFile ? (activeFile.split(/[/\\]/).pop() ?? 'Untitled') : 'Untitled';
@@ -120,6 +150,8 @@ export const MenuBar = ({ onOpenSettings }: MenuBarProps) => {
                 <div className={styles.rightGroup}>
                     <MenuRight
                         onOpenSettings={onOpenSettings}
+                        onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+                        onOpenProfiles={onOpenProfiles}
                     />
 
                     <WindowControls />

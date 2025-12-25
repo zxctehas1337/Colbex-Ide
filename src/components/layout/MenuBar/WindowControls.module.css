@@ -14,7 +14,7 @@
     height: 100%;
     background: transparent;
     border: none;
-    color: #cccccc;
+    color: var(--theme-foreground);
     transition: background-color 0.1s;
     cursor: default;
     position: relative;
@@ -23,8 +23,8 @@
 }
 
 .button:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: #ffffff;
+    background-color: var(--theme-hover-overlay);
+    color: var(--theme-foreground);
 }
 
 .button.close:hover {
@@ -51,8 +51,8 @@
     top: 100%;
     right: 0;
     width: 260px;
-    background-color: #202020;
-    border: 1px solid #333333;
+    background-color: var(--theme-background-secondary);
+    border: 1px solid var(--theme-border);
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     padding: 12px;
@@ -93,21 +93,21 @@
 }
 
 .layoutPreview:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--theme-hover-overlay);
 }
 
 .zone {
-    background-color: #3d3d3d;
+    background-color: var(--theme-background-tertiary);
     border-radius: 1px;
     transition: background-color 0.1s;
 }
 
 .layoutPreview:hover .zone {
-    background-color: #505050;
+    background-color: var(--theme-foreground-subtle);
 }
 
 .layoutPreview:hover .zone:hover {
-    background-color: #0078d4;
+    background-color: var(--theme-accent);
 }
 
 /* Specific layout styles */

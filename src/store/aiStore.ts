@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { invoke } from '@tauri-apps/api/core';
 
 export type AIModel = {
     id: string;
     name: string;
-    provider: 'openai' | 'anthropic' | 'gemini' | 'ollama';
+    provider: 'openai' | 'anthropic' | 'google' | 'xai' | 'zhipu' | 'yandex' | 'gigachat' | 'ollama' | 'agentrouter';
 };
 
 export type Message = {
@@ -20,7 +21,24 @@ export type Conversation = {
     timestamp: number;
     messages: Message[];
     modelId: string;
-    mode: 'ask' | 'agent';
+    mode: 'responder' | 'agent';
+};
+
+export type ApiKeys = {
+    openai: string;
+    anthropic: string;
+    google: string;
+    xai: string;
+    zhipu: string;
+    yandex: string;
+    gigachat: string;
+    agentrouter: string;
+};
+
+export type OllamaLocalModel = {
+    name: string;
+    size: string;
+    digest: string;
 };
 
 interface AIState {
@@ -28,31 +46,25 @@ interface AIState {
     activeConversationId: string | null;
     availableModels: AIModel[];
     activeModelId: string;
-    activeMode: 'ask' | 'agent';
-
+    activeMode: 'responder' | 'agent';
+    apiKeys: ApiKeys;
+    ollamaLocalModels: OllamaLocalModel[];
     isAssistantOpen: boolean;
-<<<<<<< Updated upstream
-    // Actions
-    addMessage: (conversationId: string, message: Message) => void;
-    createConversation: (prompt: string) => string;
-=======
     isLoadingModels: boolean;
     
     // Actions
     addMessage: (conversationId: string, message: Message) => void;
     appendMessageContent: (conversationId: string, content: string) => void;
     createConversation: () => string;
->>>>>>> Stashed changes
     setActiveConversation: (id: string | null) => void;
-    setMode: (mode: 'ask' | 'agent') => void;
+    setMode: (mode: 'responder' | 'agent') => void;
     setModel: (modelId: string) => void;
+    clearConversation: (id: string) => void;
     deleteConversation: (id: string) => void;
     deleteMultipleConversations: (ids: string[]) => void;
     updateConversationTitle: (id: string, title: string) => void;
     toggleAssistant: () => void;
     setAssistantOpen: (open: boolean) => void;
-<<<<<<< Updated upstream
-=======
     setApiKeys: (keys: Partial<ApiKeys>) => void;
     refreshOllamaModels: () => Promise<void>;
     refreshOpenAIModels: () => Promise<void>;
@@ -65,7 +77,6 @@ interface AIState {
     
     // Getters
     getModelStatus: (modelId: string) => 'available' | 'no-api-key' | 'not-downloaded';
->>>>>>> Stashed changes
 }
 
 export const useAIStore = create<AIState>()(
@@ -73,15 +84,6 @@ export const useAIStore = create<AIState>()(
         (set, get): AIState => ({
             conversations: [],
             activeConversationId: null,
-<<<<<<< Updated upstream
-            availableModels: [
-                { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
-                { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'anthropic' },
-                { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'gemini' },
-            ],
-            activeModelId: 'gpt-4o',
-            activeMode: 'ask',
-=======
             availableModels: [],
             activeModelId: '',
             activeMode: 'responder',
@@ -96,14 +98,10 @@ export const useAIStore = create<AIState>()(
                 agentrouter: '',
             },
             ollamaLocalModels: [],
->>>>>>> Stashed changes
             isAssistantOpen: false,
             isLoadingModels: false,
 
             toggleAssistant: () => set((state) => ({ isAssistantOpen: !state.isAssistantOpen })),
-<<<<<<< Updated upstream
-            setAssistantOpen: (open) => set({ isAssistantOpen: open }),
-=======
             setAssistantOpen: (open: boolean) => set({ isAssistantOpen: open }),
             
             setApiKeys: async (keys: Partial<ApiKeys>) => {
@@ -270,7 +268,6 @@ export const useAIStore = create<AIState>()(
                     return hasApiKey && hasApiKey.trim() ? 'available' : 'no-api-key';
                 }
             },
->>>>>>> Stashed changes
 
             addMessage: (conversationId: string, message: Message) => {
                 set((state) => ({
@@ -282,9 +279,6 @@ export const useAIStore = create<AIState>()(
                 }));
             },
 
-<<<<<<< Updated upstream
-            createConversation: (prompt) => {
-=======
             appendMessageContent: (conversationId: string, content: string) => {
                 set((state) => ({
                     conversations: state.conversations.map((c) => {
@@ -302,7 +296,6 @@ export const useAIStore = create<AIState>()(
             },
 
             createConversation: () => {
->>>>>>> Stashed changes
                 const id = crypto.randomUUID();
                 const newConv: Conversation = {
                     id,
@@ -323,9 +316,6 @@ export const useAIStore = create<AIState>()(
             setMode: (mode: 'responder' | 'agent') => set({ activeMode: mode }),
             setModel: (modelId: string) => set({ activeModelId: modelId }),
 
-<<<<<<< Updated upstream
-            deleteConversation: (id) => set((state) => ({
-=======
             clearConversation: (id: string) => set((state) => ({
                 conversations: state.conversations.map((c) =>
                     c.id === id ? { ...c, messages: [] } : c
@@ -333,7 +323,6 @@ export const useAIStore = create<AIState>()(
             })),
 
             deleteConversation: (id: string) => set((state) => ({
->>>>>>> Stashed changes
                 conversations: state.conversations.filter((c) => c.id !== id),
                 activeConversationId: state.activeConversationId === id ? null : state.activeConversationId
             })),
@@ -465,9 +454,6 @@ export const useAIStore = create<AIState>()(
             },
         }),
         {
-<<<<<<< Updated upstream
-            name: 'ai-storage', // unique name for localStorage
-=======
             name: 'ai-storage-v10', // Update version to force refresh with proxy models
             version: 10,
             migrate: (persistedState: any, version: number) => {
@@ -497,7 +483,6 @@ export const useAIStore = create<AIState>()(
                 }
                 return persistedState;
             },
->>>>>>> Stashed changes
         }
     )
 );

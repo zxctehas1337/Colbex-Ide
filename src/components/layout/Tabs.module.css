@@ -1,27 +1,29 @@
 /* VS Code-style Tab Bar Container */
 .tabsContainer {
   display: flex;
-  flex-direction: column;
-  background-color: #2d2d2d;
+  flex-direction: row;
+  background-color: var(--theme-tab-inactive-background);
   height: 35px;
-  overflow: hidden;
+  overflow: visible;
   user-select: none;
   position: relative;
   flex-shrink: 0;
+  transition: background-color 0.2s ease;
 }
 
 /* Tab Bar - Scrollable Container */
 .tabBar {
   display: flex;
   height: 35px;
-  background-color: #2d2d2d;
+  background-color: var(--theme-tab-inactive-background);
   overflow-x: auto;
   overflow-y: hidden;
   user-select: none;
   font-size: 13px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Segoe WPC', 'Ubuntu', 'Droid Sans', sans-serif;
   position: relative;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  flex: 1;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
 }
@@ -47,28 +49,40 @@
 .tabContent {
   display: flex;
   align-items: center;
-  flex: 1;
   padding: 0 8px;
   gap: 6px;
   height: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Active Tab */
 .tabActive {
-  background-color: #1e1e1e;
-  color: #cccccc;
+  background-color: var(--theme-tab-active-background);
+  color: var(--theme-foreground);
+}
+
+/* Second Editor Tab (in split view) */
+.tabSecondEditor {
+  background-color: var(--theme-background-tertiary);
+  color: var(--theme-foreground);
+  border-left: 3px solid var(--theme-foreground-muted);
+}
+
+.tabSecondEditor:hover {
+  background-color: var(--theme-background-tertiary);
+  color: var(--theme-foreground);
 }
 
 /* Inactive Tab */
 .tabInactive {
-  background-color: #2d2d2d;
-  color: #969696;
+  background-color: var(--theme-tab-inactive-background);
+  color: var(--theme-foreground-muted);
 }
 
 .tabInactive:hover {
-  background-color: #37373d;
-  color: #cccccc;
+  background-color: var(--theme-background-tertiary);
+  color: var(--theme-foreground);
 }
 
 /* Tab Separator - vertical line between tabs */
@@ -79,7 +93,7 @@
   top: 8px;
   bottom: 8px;
   width: 1px;
-  background-color: #252526;
+  background-color: var(--theme-border);
   pointer-events: none;
   z-index: 1;
 }
@@ -118,6 +132,16 @@
   min-width: 0;
 }
 
+/* Deleted file tab */
+.tabDeleted {
+  color: var(--theme-error);
+}
+
+.tabLabelDeleted {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
 /* Close Button */
 .closeButton {
   display: flex;
@@ -130,11 +154,12 @@
   cursor: pointer;
   border-radius: 2px;
   padding: 0;
-  margin-left: 4px;
+  margin-left: auto;
   flex-shrink: 0;
   opacity: 0;
   transition: opacity 0.1s ease, background-color 0.1s ease;
   color: inherit;
+  position: relative;
 }
 
 .closeButtonActive {
@@ -146,18 +171,18 @@
 }
 
 .closeButton:hover {
-  background-color: rgba(255, 255, 255, 0.17);
+  background-color: var(--theme-hover-overlay-strong);
 }
 
 .closeButton:active {
-  background-color: rgba(255, 255, 255, 0.25);
+  background-color: var(--theme-hover-overlay-strong);
 }
 
 /* Close Icon */
 .closeIcon {
   width: 14px;
   height: 14px;
-  color: #cccccc;
+  color: var(--theme-foreground-muted);
   opacity: 0.7;
   transition: opacity 0.1s ease;
 }
@@ -175,17 +200,17 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #cccccc;
+  background-color: var(--theme-foreground-muted);
   margin: 0;
   opacity: 0.9;
 }
 
 .tabActive .unsavedDot {
-  background-color: #cccccc;
+  background-color: var(--theme-foreground-muted);
 }
 
 .tabInactive .unsavedDot {
-  background-color: #969696;
+  background-color: var(--theme-foreground-subtle);
 }
 
 .closeButton:hover .unsavedDot {
@@ -211,11 +236,11 @@
 /* Diff Label */
 .diffLabel {
   font-size: 11px;
-  color: #808080;
+  color: var(--theme-foreground-subtle);
   margin-left: 4px;
   white-space: nowrap;
 }
 
 .tabActive .diffLabel {
-  color: #a0a0a0;
+  color: var(--theme-foreground-muted);
 }

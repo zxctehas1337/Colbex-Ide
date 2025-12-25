@@ -1,7 +1,8 @@
-import { appWindow } from '@tauri-apps/api/window';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Minus, Square, X } from 'lucide-react';
 
 const TitleBar = () => {
+  const appWindow = getCurrentWindow();
   const minimize = () => appWindow.minimize();
   const toggleMaximize = async () => {
     const isMaximized = await appWindow.isMaximized();
@@ -29,8 +30,8 @@ const TitleBar = () => {
         <button onClick={toggleMaximize} className="px-3 hover:bg-white/10">
           <Square size={14} />
         </button>
-        <button 
-          onClick={close} 
+        <button
+          onClick={close}
           className="px-3 hover:bg-red-500 hover:text-white"
         >
           <X size={16} />

@@ -1,92 +1,99 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useGitStore } from '../../../store/gitStore';
 import { useProjectStore } from '../../../store/projectStore';
-import { 
-    ChevronRight, ChevronDown, RotateCw, Check, Plus, 
-    Undo2, GitBranch, Cloud, User, CircleDot, GitGraph,
-    Monitor, Globe
-} from 'lucide-react';
-import { getFileIcon } from '../../../utils/fileIcons';
+import { RotateCw, GitBranch, Cloud, CircleDot } from 'lucide-react';
+import { GitCommit, tauriApi } from '../../../lib/tauri-api';
+import { CommitSection, GraphSection, ChangesSection, CommitTooltip } from './components';
+import { TooltipPosition } from './types';
 import styles from './GitPane.module.css';
 
 export const GitPane = () => {
     const { currentWorkspace, openDiffTab } = useProjectStore();
     const { 
-        files, info, contributors, isLoading, error, commitMessage, activeTab,
-        setCommitMessage, setActiveTab, refresh, refreshContributors, stageFile, 
-        stageAll, commit, discardChanges
+        files, info, commits, isLoading, error, commitMessage, graphOpen, pushResult,
+        isAuthModalOpen,
+        setCommitMessage, setGraphOpen, refresh, refreshCommits, stageFile, 
+        stageAll, commit, discardChanges, clearPushResult, setAuthModalOpen, push
     } = useGitStore();
     
     const [changesOpen, setChangesOpen] = useState(true);
-<<<<<<< Updated upstream
-    const [contributorsOpen, setContributorsOpen] = useState(true);
-=======
     const [hoveredCommit, setHoveredCommit] = useState<GitCommit | null>(null);
     const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ x: 0, y: 0 });
     const [isTooltipHovered, setIsTooltipHovered] = useState(false);
     const hideTimeoutRef = useRef<number | null>(null);
->>>>>>> Stashed changes
 
     useEffect(() => {
         if (currentWorkspace) {
             refresh(currentWorkspace);
+            refreshCommits(currentWorkspace);
         }
     }, [currentWorkspace]);
-
-    useEffect(() => {
-        if (currentWorkspace && activeTab === 'graph') {
-            refreshContributors(currentWorkspace);
-        }
-    }, [currentWorkspace, activeTab]);
 
     const handleCommit = async () => {
         if (currentWorkspace && commitMessage.trim() && files.length > 0) {
             await stageAll(currentWorkspace);
             await commit(currentWorkspace);
+            await refreshCommits(currentWorkspace);
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && e.ctrlKey) {
-            e.preventDefault();
-            handleCommit();
+    const handleCommitHover = (commit: GitCommit, e: React.MouseEvent) => {
+        if (hideTimeoutRef.current) {
+            clearTimeout(hideTimeoutRef.current);
+            hideTimeoutRef.current = null;
         }
+        const rect = e.currentTarget.getBoundingClientRect();
+        setTooltipPosition({ x: rect.right + 8, y: rect.top });
+        setHoveredCommit(commit);
     };
 
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'modified':
-            case 'staged_modified':
-                return 'M';
-            case 'untracked':
-            case 'staged_new':
-                return 'U';
-            case 'deleted':
-            case 'staged_deleted':
-                return 'D';
-            default:
-                return '?';
+    const handleCommitLeave = () => {
+        hideTimeoutRef.current = setTimeout(() => {
+            if (!isTooltipHovered) {
+                setHoveredCommit(null);
+            }
+        }, 100);
+    };
+
+    const handleTooltipEnter = () => {
+        if (hideTimeoutRef.current) {
+            clearTimeout(hideTimeoutRef.current);
+            hideTimeoutRef.current = null;
         }
+        setIsTooltipHovered(true);
     };
 
-    const getStatusClass = (status: string) => {
-        if (status.includes('modified')) return styles.statusM;
-        if (status.includes('new') || status === 'untracked') return styles.statusU;
-        if (status.includes('deleted')) return styles.statusD;
-        return '';
+    const handleTooltipLeave = () => {
+        setIsTooltipHovered(false);
+        setHoveredCommit(null);
     };
 
-    const getFileName = (path: string) => path.split('/').pop() || path;
-    const getFilePath = (path: string) => {
-        const parts = path.split('/');
-        if (parts.length > 1) {
-            return parts.slice(0, -1).join('/');
-        }
-        return '';
-    };
-
-    const handleFileClick = (file: typeof files[0]) => {
+    const handleFileClick = (file: { path: string; is_staged: boolean }) => {
         openDiffTab(file.path, file.is_staged);
+    };
+
+    const handleAuthLogin = async () => {
+        try {
+            const ok = await tauriApi.gitGithubAuthStatus();
+            if (ok) {
+                setAuthModalOpen(false);
+                return;
+            }
+        } catch {
+            // ignore
+        }
+        try {
+            await tauriApi.gitGithubAuthLogin();
+            setAuthModalOpen(false);
+        } catch (e) {
+            console.warn('GitHub auth login failed:', e);
+        }
+    };
+
+    const handleRetryPush = async () => {
+        if (!currentWorkspace) return;
+        setAuthModalOpen(false);
+        await push(currentWorkspace);
     };
 
     if (!currentWorkspace) {
@@ -142,9 +149,7 @@ export const GitPane = () => {
                         className={styles.headerBtn} 
                         onClick={() => {
                             refresh(currentWorkspace);
-                            if (activeTab === 'graph') {
-                                refreshContributors(currentWorkspace);
-                            }
+                            refreshCommits(currentWorkspace);
                         }}
                         title="Refresh"
                     >
@@ -153,226 +158,55 @@ export const GitPane = () => {
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div className={styles.tabs}>
-                <button 
-                    className={`${styles.tab} ${activeTab === 'changes' ? styles.tabActive : ''}`}
-                    onClick={() => setActiveTab('changes')}
-                >
-                    <GitBranch size={14} />
-                    Changes
-                </button>
-                <button 
-                    className={`${styles.tab} ${activeTab === 'graph' ? styles.tabActive : ''}`}
-                    onClick={() => setActiveTab('graph')}
-                >
-                    <GitGraph size={14} />
-                    Graph
-                </button>
-            </div>
+            <CommitSection
+                commitMessage={commitMessage}
+                filesCount={files.length}
+                onCommitMessageChange={setCommitMessage}
+                onCommit={handleCommit}
+            />
 
-            {activeTab === 'changes' && (
-                <>
-                    {/* Commit Section */}
-                    <div className={styles.commitSection}>
-                        <textarea
-                            className={styles.commitInput}
-                            placeholder="Message (Ctrl+Enter to commit)"
-                            value={commitMessage}
-                            onChange={(e) => setCommitMessage(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                        />
-                        <button 
-                            className={styles.commitBtn}
-                            onClick={handleCommit}
-                            disabled={!commitMessage.trim() || files.length === 0}
-                        >
-                            <Check size={14} />
-                            Commit
-                        </button>
-                    </div>
+            <GraphSection
+                commits={commits}
+                graphOpen={graphOpen}
+                remoteName={info?.remote_name}
+                onToggle={() => setGraphOpen(!graphOpen)}
+                onCommitHover={handleCommitHover}
+                onCommitLeave={handleCommitLeave}
+            />
 
-                    {/* Changes Section */}
-                    <div className={styles.changesSection}>
-                        <div 
-                            className={styles.sectionHeader}
-                            onClick={() => setChangesOpen(!changesOpen)}
-                        >
-                            <div className={styles.sectionTitle}>
-                                {changesOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                                <span>Changes</span>
-                                {files.length > 0 && (
-                                    <span className={styles.sectionCount}>{files.length}</span>
-                                )}
-                            </div>
-                            {files.length > 0 && (
-                                <div className={styles.sectionActions}>
-                                    <button 
-                                        className={styles.sectionBtn}
-                                        onClick={(e) => { e.stopPropagation(); stageAll(currentWorkspace); }}
-                                        title="Stage All"
-                                    >
-                                        <Plus size={12} />
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                        
-                        {changesOpen && (
-                            <div className={styles.filesList}>
-                                {files.length === 0 ? (
-                                    <div className={styles.emptySection}>No changes</div>
-                                ) : (
-                                    files.map((file) => (
-                                        <div 
-                                            key={file.path} 
-                                            className={styles.fileItem}
-                                            onClick={() => handleFileClick(file)}
-                                        >
-                                            <div className={styles.fileIcon}>
-                                                {getFileIcon(getFileName(file.path), file.path)}
-                                            </div>
-                                            <span className={styles.fileName}>
-                                                {getFileName(file.path)}
-                                                {getFilePath(file.path) && (
-                                                    <span className={styles.filePath}>{getFilePath(file.path)}</span>
-                                                )}
-                                            </span>
-                                            <span className={`${styles.fileStatus} ${getStatusClass(file.status)}`}>
-                                                {getStatusLabel(file.status)}
-                                            </span>
-                                            <div className={styles.fileActions}>
-                                                <button 
-                                                    className={styles.fileActionBtn}
-                                                    onClick={(e) => { e.stopPropagation(); discardChanges(currentWorkspace, file.path); }}
-                                                    title="Discard Changes"
-                                                >
-                                                    <Undo2 size={12} />
-                                                </button>
-                                                <button 
-                                                    className={styles.fileActionBtn}
-                                                    onClick={(e) => { e.stopPropagation(); stageFile(currentWorkspace, file.path); }}
-                                                    title="Stage"
-                                                >
-                                                    <Plus size={12} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
+            <ChangesSection
+                files={files}
+                changesOpen={changesOpen}
+                onToggle={() => setChangesOpen(!changesOpen)}
+                onFileClick={handleFileClick}
+                onStageFile={(path) => stageFile(currentWorkspace, path)}
+                onStageAll={() => stageAll(currentWorkspace)}
+                onDiscardChanges={(path) => discardChanges(currentWorkspace, path)}
+            />
+
+            {pushResult && (
+                <div className={`${styles.pushResult} ${pushResult.success ? styles.success : styles.error}`}>
+                    <div className={styles.resultIcon}>
+                        {pushResult.success ? (
+                            <Cloud size={14} />
+                        ) : (
+                            <GitBranch size={14} />
                         )}
                     </div>
-                </>
-            )}
-
-            {activeTab === 'graph' && (
-                <div className={styles.graphSection}>
-                    {/* Repository Info */}
-                    {info && (
-                        <div className={styles.repoInfo}>
-                            <div className={styles.repoInfoItem}>
-                                <span className={styles.repoInfoLabel}>Branch</span>
-                                <div className={styles.branchBadge}>
-                                    <CircleDot size={10} />
-                                    {info.branch}
-                                </div>
-                            </div>
-                            <div className={styles.repoInfoItem}>
-                                <span className={styles.repoInfoLabel}>Repository</span>
-                                <div className={styles.repoBadge}>
-                                    {info.has_remote ? (
-                                        <>
-                                            <Globe size={12} />
-                                            Remote
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Monitor size={12} />
-                                            Local
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Contributors Section */}
-                    <div className={styles.contributorsSection}>
-                        <div 
-                            className={styles.sectionHeader}
-                            onClick={() => setContributorsOpen(!contributorsOpen)}
-                        >
-                            <div className={styles.sectionTitle}>
-                                {contributorsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                                <span>Contributors</span>
-                                {contributors.length > 0 && (
-                                    <span className={styles.sectionCount}>{contributors.length}</span>
-                                )}
-                            </div>
-                        </div>
-                        
-                        {contributorsOpen && (
-                            <div className={styles.contributorsList}>
-                                {contributors.length === 0 ? (
-                                    <div className={styles.emptySection}>No contributors found</div>
-                                ) : (
-                                    contributors.map((contributor) => (
-                                        <div key={contributor.email} className={styles.contributorItem}>
-                                            <div className={styles.contributorAvatar}>
-                                                {contributor.avatar_url ? (
-                                                    <img 
-                                                        src={contributor.avatar_url} 
-                                                        alt={contributor.name}
-                                                        onError={(e) => {
-                                                            (e.target as HTMLImageElement).style.display = 'none';
-                                                            (e.target as HTMLImageElement).nextElementSibling?.classList.remove(styles.hidden);
-                                                        }}
-                                                    />
-                                                ) : null}
-                                                <div className={`${styles.avatarFallback} ${contributor.avatar_url ? styles.hidden : ''}`}>
-                                                    <User size={14} />
-                                                </div>
-                                            </div>
-                                            <div className={styles.contributorInfo}>
-                                                <div className={styles.contributorName}>
-                                                    {contributor.name}
-                                                    {contributor.is_local && (
-                                                        <span className={styles.youBadge}>you</span>
-                                                    )}
-                                                </div>
-                                                <div className={styles.contributorEmail}>{contributor.email}</div>
-                                                <div className={styles.contributorMeta}>
-                                                    <span className={styles.commitsCount}>
-                                                        {contributor.commits_count} commit{contributor.commits_count !== 1 ? 's' : ''}
-                                                    </span>
-                                                    {contributor.branches.length > 0 && (
-                                                        <div className={styles.branchesList}>
-                                                            {contributor.branches.slice(0, 3).map((branch) => (
-                                                                <span key={branch} className={styles.branchTag}>
-                                                                    {branch.replace('origin/', '')}
-                                                                </span>
-                                                            ))}
-                                                            {contributor.branches.length > 3 && (
-                                                                <span className={styles.moreBranches}>
-                                                                    +{contributor.branches.length - 3}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        )}
+                    <div className={styles.resultContent}>
+                        <div className={styles.resultMessage}>{pushResult.message}</div>
                     </div>
+                    <button
+                        className={styles.closeResult}
+                        onClick={clearPushResult}
+                        title="Close"
+                    >
+                        ×
+                    </button>
                 </div>
             )}
 
-            {/* Footer with branch info - only show on changes tab */}
-            {info && activeTab === 'changes' && (
+            {info && (
                 <div className={styles.footer}>
                     <div className={styles.branchInfo}>
                         <div className={styles.branchName}>
@@ -382,6 +216,47 @@ export const GitPane = () => {
                         {info.has_remote && (
                             <Cloud size={14} className={styles.remoteIcon} />
                         )}
+                    </div>
+                </div>
+            )}
+
+            {hoveredCommit && (
+                <CommitTooltip
+                    commit={hoveredCommit}
+                    position={tooltipPosition}
+                    remoteName={info?.remote_name}
+                    onMouseEnter={handleTooltipEnter}
+                    onMouseLeave={handleTooltipLeave}
+                />
+            )}
+
+            {isAuthModalOpen && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContainer}>
+                        <div className={styles.modalTitle}>Sign in required</div>
+                        <div className={styles.modalText}>
+                            To push, you need to authenticate. You can sign in via GitHub CLI or configure SSH/credential helper.
+                        </div>
+                        <div className={styles.modalActions}>
+                            <button
+                                className={styles.modalBtnSecondary}
+                                onClick={() => tauriApi.openUrl('https://github.com/login')}
+                            >
+                                Open GitHub Login
+                            </button>
+                            <button className={styles.modalBtn} onClick={handleAuthLogin}>
+                                Sign in (gh)
+                            </button>
+                            <button className={styles.modalBtn} onClick={handleRetryPush}>
+                                Retry push
+                            </button>
+                            <button
+                                className={styles.modalBtnSecondary}
+                                onClick={() => setAuthModalOpen(false)}
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

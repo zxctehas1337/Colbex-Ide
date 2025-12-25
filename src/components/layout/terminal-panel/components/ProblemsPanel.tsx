@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import clsx from 'clsx';
-import { tauriApi, type FileProblems, type Problem } from '../../../../lib/tauri-api';
+import { tauriApi, type FileProblems } from '../../../../lib/tauri-api';
 import { useProjectStore } from '../../../../store/projectStore';
-import { getFileIcon } from '../../../../utils/fileIcons';
+import { useDiagnosticsStore } from '../../../../store/diagnosticsStore';
+import { useProblemsMerge, type UnifiedProblem } from './useProblemsMerge';
+import { FileProblemsGroup } from './FileProblemsGroup';
 import styles from './ProblemsPanel.module.css';
 
 interface ProblemsPanelProps {
@@ -10,17 +11,28 @@ interface ProblemsPanelProps {
 }
 
 export const ProblemsPanel = ({ filterText = '' }: ProblemsPanelProps) => {
-    const [problemsData, setProblemsData] = useState<FileProblems[]>([]);
+    const [oxcProblems, setOxcProblems] = useState<FileProblems[]>([]);
     const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [scanStats, setScanStats] = useState<{ timeMs: number; cacheHits: number; cacheMisses: number } | null>(null);
     
     const currentWorkspace = useProjectStore((state) => state.currentWorkspace);
     const openFile = useProjectStore((state) => state.openFile);
+    
+    // Monaco diagnostics from store
+    const monacoDiagnostics = useDiagnosticsStore((state) => state.monacoDiagnostics);
+    
+    // Use merged problems hook
+    const { mergedProblems } = useProblemsMerge({
+        oxcProblems,
+        monacoDiagnostics,
+        currentWorkspace,
+    });
 
     const fetchProblems = useCallback(async () => {
         if (!currentWorkspace) {
-            setProblemsData([]);
+            setOxcProblems([]);
             return;
         }
 
@@ -29,11 +41,12 @@ export const ProblemsPanel = ({ filterText = '' }: ProblemsPanelProps) => {
 
         try {
             const result = await tauriApi.getProblems(currentWorkspace);
-            setProblemsData(result.files);
-            
-            // Auto-expand all files with problems
-            const allPaths = new Set(result.files.map(f => f.path));
-            setExpandedFiles(allPaths);
+            setOxcProblems(result.files);
+            setScanStats({
+                timeMs: result.scan_time_ms,
+                cacheHits: result.cache_hits,
+                cacheMisses: result.cache_misses,
+            });
         } catch (err) {
             console.error('Failed to fetch problems:', err);
             setError(err instanceof Error ? err.message : 'Failed to fetch problems');
@@ -45,10 +58,16 @@ export const ProblemsPanel = ({ filterText = '' }: ProblemsPanelProps) => {
     useEffect(() => {
         fetchProblems();
         
-        // Refresh every 10 seconds
+        // Refresh OXC problems every 10 seconds
         const interval = setInterval(fetchProblems, 10000);
         return () => clearInterval(interval);
     }, [fetchProblems]);
+
+    // Auto-expand files with problems
+    useEffect(() => {
+        const allPaths = new Set(mergedProblems.map(f => f.path));
+        setExpandedFiles(allPaths);
+    }, [mergedProblems.length]);
 
     const toggleFile = (path: string) => {
         setExpandedFiles(prev => {
@@ -62,30 +81,44 @@ export const ProblemsPanel = ({ filterText = '' }: ProblemsPanelProps) => {
         });
     };
 
-    const handleProblemClick = (problem: Problem, filePath: string) => {
-        // Build full path
-        const fullPath = currentWorkspace 
-            ? `${currentWorkspace}/${filePath}`.replace(/\\/g, '/').replace(/\/+/g, '/')
-            : filePath;
+    const handleProblemClick = async (problem: UnifiedProblem, filePath: string) => {
+        let fullPath = filePath.replace(/\\/g, '/');
         
-        // Open file
-        openFile(fullPath);
+        // Ensure we have an absolute path
+        if (!fullPath.startsWith('/') && !/^[a-zA-Z]:/.test(fullPath)) {
+            fullPath = currentWorkspace 
+                ? `${currentWorkspace}/${fullPath}`.replace(/\/+/g, '/')
+                : fullPath;
+        }
         
-        // Navigate to line/column after a small delay to ensure file is loaded
-        setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('editor-reveal-line', {
-                detail: {
-                    path: fullPath,
-                    line: problem.line,
-                    start: problem.column - 1,
-                    end: problem.column - 1
-                }
-            }));
-        }, 100);
+        // Validate path before opening
+        if (!fullPath || fullPath === '/' || fullPath === currentWorkspace) {
+            console.error('Invalid file path:', fullPath);
+            return;
+        }
+        
+        try {
+            openFile(fullPath);
+            
+            // Navigate to line/column after a small delay to ensure file is loaded
+            const column = Math.max(1, problem.column);
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('editor-reveal-line', {
+                    detail: {
+                        path: fullPath,
+                        line: Math.max(1, problem.line),
+                        start: column - 1,
+                        end: column - 1
+                    }
+                }));
+            }, 150);
+        } catch (error) {
+            console.error('Failed to open file:', fullPath, error);
+        }
     };
 
     const filteredData = filterText
-        ? problemsData.map(file => ({
+        ? mergedProblems.map(file => ({
             ...file,
             problems: file.problems.filter(p => 
                 p.message.toLowerCase().includes(filterText.toLowerCase()) ||
@@ -93,9 +126,9 @@ export const ProblemsPanel = ({ filterText = '' }: ProblemsPanelProps) => {
                 p.path.toLowerCase().includes(filterText.toLowerCase())
             )
         })).filter(file => file.problems.length > 0)
-        : problemsData;
+        : mergedProblems;
 
-    if (isLoading && problemsData.length === 0) {
+    if (isLoading && mergedProblems.length === 0) {
         return (
             <div className={styles.container}>
                 <div className={styles.placeholder}>
@@ -123,6 +156,11 @@ export const ProblemsPanel = ({ filterText = '' }: ProblemsPanelProps) => {
             <div className={styles.container}>
                 <div className={styles.placeholder}>
                     No problems detected in workspace
+                    {scanStats && (
+                        <span className={styles.scanStats}>
+                            {' '}(scanned in {scanStats.timeMs}ms, cache: {scanStats.cacheHits}/{scanStats.cacheHits + scanStats.cacheMisses})
+                        </span>
+                    )}
                 </div>
             </div>
         );
@@ -130,6 +168,11 @@ export const ProblemsPanel = ({ filterText = '' }: ProblemsPanelProps) => {
 
     return (
         <div className={styles.container}>
+            {scanStats && (
+                <div className={styles.statsBar}>
+                    ⚡ {scanStats.timeMs}ms | Cache: {scanStats.cacheHits} hits, {scanStats.cacheMisses} misses
+                </div>
+            )}
             <div className={styles.list}>
                 {filteredData.map((fileProblems) => (
                     <FileProblemsGroup
@@ -145,67 +188,4 @@ export const ProblemsPanel = ({ filterText = '' }: ProblemsPanelProps) => {
     );
 };
 
-interface FileProblemsGroupProps {
-    fileProblems: FileProblems;
-    isExpanded: boolean;
-    onToggle: () => void;
-    onProblemClick: (problem: Problem, filePath: string) => void;
-}
-
-const FileProblemsGroup = ({ fileProblems, isExpanded, onToggle, onProblemClick }: FileProblemsGroupProps) => {
-    const totalCount = fileProblems.error_count + fileProblems.warning_count;
-
-    return (
-        <div className={styles.fileGroup}>
-            <button className={styles.fileHeader} onClick={onToggle}>
-                <span className={clsx(styles.chevron, isExpanded && styles.chevronExpanded)}>
-                    ›
-                </span>
-                <span className={styles.fileIcon}>
-                    {getFileIcon(fileProblems.file, fileProblems.path)}
-                </span>
-                <span className={styles.fileName}>{fileProblems.file}</span>
-                <span className={styles.filePath}>{fileProblems.path}</span>
-                <span className={styles.problemCount}>{totalCount}</span>
-            </button>
-            
-            {isExpanded && (
-                <div className={styles.problemsList}>
-                    {fileProblems.problems.map((problem) => (
-                        <ProblemItem 
-                            key={problem.id} 
-                            problem={problem} 
-                            onClick={() => onProblemClick(problem, fileProblems.path)}
-                        />
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
-
-interface ProblemItemProps {
-    problem: Problem;
-    onClick: () => void;
-}
-
-const ProblemItem = ({ problem, onClick }: ProblemItemProps) => {
-    const isError = problem.type === 'error';
-
-    return (
-        <div className={styles.problemItem} onClick={onClick}>
-            <span className={clsx(styles.problemIcon, isError ? styles.errorIcon : styles.warningIcon)}>
-                {isError ? '⊗' : '⚠'}
-            </span>
-            <span className={styles.problemMessage}>{problem.message}</span>
-            {problem.code && (
-                <span className={styles.problemCode}>{problem.source}({problem.code})</span>
-            )}
-            <span className={styles.problemLocation}>
-                [Ln {problem.line}, Col {problem.column}]
-            </span>
-        </div>
-    );
-};
-
-export type { Problem };
+export type { UnifiedProblem as Problem };

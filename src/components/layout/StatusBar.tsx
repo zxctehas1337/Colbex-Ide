@@ -1,8 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCodeBranch } from '@fortawesome/free-solid-svg-icons';
+import { faCodeBranch, faMagnifyingGlassPlus, faMagnifyingGlassMinus, faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
+import { XCircle, AlertTriangle } from 'lucide-react';
 import { useProjectStore } from '../../store/projectStore';
+import { useUIStore } from '../../store/uiStore';
+import { useGitStore } from '../../store/gitStore';
 import { tauriApi } from '../../lib/tauri-api';
+import { BranchModal } from './BranchModal';
+import { 
+    BINARY_EXTENSIONS 
+} from './Editor/editorConfig';
 import styles from '../../App.module.css';
 
 interface GitInfo {
@@ -21,9 +28,14 @@ export const StatusBar = () => {
         setFileWarnings
     } = useProjectStore();
     
+    const { zoomLevel, zoomIn, zoomOut, resetZoom, insertMode, toggleInsertMode, setBottomPanelTab, setTerminalOpen } = useUIStore();
+    
+    const { isPushing, push: pushToRemote, stageAll, commit, setCommitMessage } = useGitStore();
+    
     const [gitInfo, setGitInfo] = useState<GitInfo>({ branch: 'main', hasChanges: false });
     const [language, setLanguage] = useState<string>('Plain Text');
     const [lineCount, setLineCount] = useState<number>(0);
+    const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
 
     // Update Git branch information
     const updateGitInfo = useCallback(async () => {
@@ -45,15 +57,75 @@ export const StatusBar = () => {
         }
     }, [currentWorkspace]);
 
+    // Generate random commit message
+    const generateRandomCommitMessage = (): string => {
+        const prefixes = ['feat', 'fix', 'docs', 'style', 'refactor', 'test', 'chore', 'perf', 'ci', 'build', 'revert'];
+        const actions = [
+            'add', 'update', 'remove', 'fix', 'improve', 'optimize', 'refactor', 'clean', 'update', 'modify',
+            'enhance', 'simplify', 'streamline', 'revamp', 'overhaul', 'tweak', 'adjust', 'correct', 'rectify'
+        ];
+        const objects = [
+            'functionality', 'feature', 'component', 'module', 'service', 'handler', 'utility', 'helper',
+            'logic', 'implementation', 'interface', 'api', 'ui', 'style', 'config', 'setting', 'behavior'
+        ];
+        const suffixes = [
+            'for better performance', 'to improve user experience', 'for consistency', 'to fix bugs',
+            'for better maintainability', 'to optimize workflow', 'for clarity', 'to enhance functionality',
+            'for reliability', 'to streamline process', 'for efficiency', 'to improve code quality'
+        ];
+
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const action = actions[Math.floor(Math.random() * actions.length)];
+        const object = objects[Math.floor(Math.random() * objects.length)];
+        const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+
+        return `${prefix}: ${action} ${object} ${suffix}`;
+    };
+
+    // Handle push operation
+    const handlePush = useCallback(async () => {
+        if (!currentWorkspace || !gitInfo.hasChanges) return;
+        
+        try {
+            // Stage all changes
+            await stageAll(currentWorkspace);
+            
+            // Generate random commit message and commit
+            const randomMessage = generateRandomCommitMessage();
+            setCommitMessage(randomMessage);
+            await commit(currentWorkspace);
+            
+            // Push to remote
+            await pushToRemote(currentWorkspace);
+            
+            // Update git info after push
+            updateGitInfo();
+        } catch (error) {
+            console.error('Commit and push failed:', error);
+        }
+    }, [currentWorkspace, gitInfo.hasChanges, stageAll, commit, setCommitMessage, pushToRemote, updateGitInfo]);
+
     // Analyze file content for errors and warnings
     const analyzeFile = useCallback(async (filePath: string) => {
         try {
+            // Skip analysis for binary/video files to prevent UTF-8 errors
+            const extension = filePath.split('.').pop()?.toLowerCase() || '';
+            const videoExtensions = ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'avi', 'wmv', 'flv', 'mkv', 'm4v', '3gp', 'ts'];
+            const allBinaryExtensions = [...BINARY_EXTENSIONS, ...videoExtensions];
+            
+            if (allBinaryExtensions.includes(extension)) {
+                setLineCount(0);
+                setLanguage('Binary');
+                setFileErrors(filePath, 0);
+                setFileWarnings(filePath, 0);
+                return;
+            }
+
             const content = await tauriApi.readFile(filePath);
             const lines = content.split('\n');
             setLineCount(lines.length);
 
             // Determine language from file extension
-            const extension = filePath.split('.').pop()?.toLowerCase() || '';
             const detectedLanguage = getLanguageFromExtension(extension);
             setLanguage(detectedLanguage);
 
@@ -85,7 +157,17 @@ export const StatusBar = () => {
         
         // Set up polling for git status (every 5 seconds)
         const interval = setInterval(updateGitInfo, 5000);
-        return () => clearInterval(interval);
+        
+        // Listen for git branch changes
+        const handleGitBranchChanged = () => {
+            updateGitInfo();
+        };
+        window.addEventListener('git-branch-changed', handleGitBranchChanged);
+        
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('git-branch-changed', handleGitBranchChanged);
+        };
     }, [updateGitInfo]);
 
     const getLanguageFromExtension = (extension: string): string => {
@@ -255,35 +337,138 @@ export const StatusBar = () => {
     const warningCount = activeFile ? warnings[activeFile] || 0 : 0;
 
     return (
-        <div className={styles.statusBar}>
-            <div className={styles.statusLeft}>
-                <div className={`${styles.statusItem} ${gitInfo.hasChanges ? styles.gitChanged : ''}`}>
-                    <FontAwesomeIcon 
-                        icon={faCodeBranch} 
-                        style={{
-                            fontSize: '16px',
-                            marginRight: '4px'
-                        }} 
-                    />
-                    <span style={{ verticalAlign: 'middle' }}>
-                        {gitInfo.branch} {gitInfo.hasChanges && '*'}
-                    </span>
-                </div>
+        <>
+            <div className={styles.statusBar}>
+                <div className={styles.statusLeft}>
+                    <div 
+                        className={`${styles.statusItem} ${gitInfo.hasChanges ? styles.gitChanged : ''}`}
+                        onClick={() => setIsBranchModalOpen(true)}
+                        style={{ cursor: 'pointer' }}
+                        title="Click to manage branches"
+                    >
+                        <FontAwesomeIcon 
+                            icon={faCodeBranch} 
+                            style={{
+                                fontSize: '16px',
+                                marginRight: '4px'
+                            }} 
+                        />
+                        <span style={{ verticalAlign: 'middle' }}>
+                            {gitInfo.branch} {gitInfo.hasChanges && '*'}
+                        </span>
+                        
+                        {/* Push button - show only when there are changes */}
+                        {gitInfo.hasChanges && (
+                            <button
+                                className={styles.pushButton}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePush();
+                                }}
+                                disabled={isPushing}
+                                style={{ 
+                                    cursor: isPushing ? 'not-allowed' : 'pointer',
+                                    opacity: isPushing ? 0.6 : 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '2px 6px',
+                                    border: 'none',
+                                    background: 'none',
+                                    color: 'inherit',
+                                    marginLeft: '4px'
+                                }}
+                                title={isPushing ? 'Committing and pushing...' : 'Commit changes with random message and push to remote'}
+                            >
+                                <FontAwesomeIcon 
+                                    icon={faCloudArrowUp} 
+                                    style={{ fontSize: '14px' }}
+                                />
+                            </button>
+                        )}
+                    </div>
                 {activeFile && (
                     <span className={styles.statusItem}>
-                        {errorCount > 0 && <span className={styles.error}>{errorCount} errors</span>}
-                        {warningCount > 0 && (
-                            <span>
-                                {errorCount > 0 && ', '}
-                                <span className={styles.warning}>{warningCount} warnings</span>
-                            </span>
-                        )}
-                        {(errorCount === 0 && warningCount === 0) && 'No problems'}
+                        <span 
+                            className={styles.error}
+                            style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                            onClick={() => {
+                                setTerminalOpen(true);
+                                setBottomPanelTab('problems');
+                            }}
+                            title={`${errorCount} error${errorCount !== 1 ? 's' : ''} - Click to open Problems panel`}
+                        >
+                            <XCircle size={16} style={{ marginRight: '4px' }} />
+                            {errorCount}
+                        </span>
+                        <span 
+                            className={styles.warning}
+                            style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', marginLeft: '8px' }}
+                            onClick={() => {
+                                setTerminalOpen(true);
+                                setBottomPanelTab('problems');
+                            }}
+                            title={`${warningCount} warning${warningCount !== 1 ? 's' : ''} - Click to open Problems panel`}
+                        >
+                            <AlertTriangle size={16} style={{ marginRight: '4px' }} />
+                            {warningCount}
+                        </span>
                     </span>
                 )}
             </div>
 
             <div className={styles.statusRight}>
+                {/* Insert mode indicator */}
+                <span 
+                    className={styles.statusItem} 
+                    onClick={toggleInsertMode}
+                    style={{ cursor: 'pointer', minWidth: '32px', textAlign: 'center' }}
+                    title="Toggle Insert/Overtype mode (Insert key)"
+                >
+                    {insertMode ? 'INS' : 'OVR'}
+                </span>
+                
+                {/* Zoom controls */}
+                <span className={styles.statusItem} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button 
+                        onClick={zoomOut}
+                        style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            cursor: 'pointer', 
+                            padding: '0 2px',
+                            color: 'inherit',
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                        title="Zoom Out (Ctrl+-)"
+                    >
+                        <FontAwesomeIcon icon={faMagnifyingGlassMinus} style={{ fontSize: '12px' }} />
+                    </button>
+                    <span 
+                        onClick={resetZoom}
+                        style={{ cursor: 'pointer', minWidth: '40px', textAlign: 'center' }}
+                        title="Reset Zoom (Ctrl+0)"
+                    >
+                        {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <button 
+                        onClick={zoomIn}
+                        style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            cursor: 'pointer', 
+                            padding: '0 2px',
+                            color: 'inherit',
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                        title="Zoom In (Ctrl++)"
+                    >
+                        <FontAwesomeIcon icon={faMagnifyingGlassPlus} style={{ fontSize: '12px' }} />
+                    </button>
+                </span>
+                
                 {activeFile && (
                     <>
                         <span className={styles.statusItem}>
@@ -295,6 +480,12 @@ export const StatusBar = () => {
                     </>
                 )}
             </div>
-        </div>
+            </div>
+            
+            <BranchModal 
+                isOpen={isBranchModalOpen} 
+                onClose={() => setIsBranchModalOpen(false)} 
+            />
+        </>
     );
 };

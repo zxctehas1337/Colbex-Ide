@@ -4,8 +4,8 @@
   align-items: center;
   justify-content: space-between;
   height: 35px;
-  background: #252526;
-  border-bottom: 1px solid #333333;
+  background: var(--theme-background-secondary);
+  border-bottom: 1px solid var(--theme-border);
   flex-shrink: 0;
 }
 
@@ -24,7 +24,7 @@
   height: 100%;
   background: transparent;
   border: none;
-  color: #cccccc;
+  color: var(--theme-foreground-muted);
   font-size: 13px;
   font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   cursor: pointer;
@@ -34,13 +34,13 @@
 }
 
 .tab:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--theme-hover-overlay);
 }
 
 .tabActive {
-  background-color: #1e1e1e;
-  color: #ffffff;
-  border-bottom-color: #007acc;
+  background-color: var(--theme-background);
+  color: var(--theme-foreground);
+  border-bottom-color: var(--theme-accent);
 }
 
 .badge {
@@ -72,16 +72,16 @@
   height: 24px;
   background: transparent;
   border: none;
-  color: #cccccc;
+  color: var(--theme-foreground-muted);
   cursor: pointer;
   border-radius: 2px;
   transition: background-color 0.1s ease;
 }
 
 .actionButton:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--theme-hover-overlay);
 }
 
 .actionButton:active {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--theme-hover-overlay-strong);
 }

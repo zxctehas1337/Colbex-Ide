@@ -1,7 +1,7 @@
-import { Files, Search, GitBranch, Bug, Monitor, Puzzle } from 'lucide-react';
+import { Files, Search, GitBranch, Bug, Monitor } from 'lucide-react';
 import styles from './ActivityBar.module.css';
 
-type ActivityId = 'files' | 'search' | 'git' | 'debug' | 'remote' | 'extensions';
+export type ActivityId = 'files' | 'search' | 'git' | 'debug' | 'remote';
 
 interface ActivityBarItem {
   id: ActivityId;
@@ -34,11 +34,6 @@ const activityBarItems: ActivityBarItem[] = [
     id: 'remote',
     icon: <Monitor size={16} strokeWidth={1.5} />,
     title: 'Remote Explorer'
-  },
-  {
-    id: 'extensions',
-    icon: <Puzzle size={16} strokeWidth={1.5} />,
-    title: 'Extensions'
   }
 ];
 

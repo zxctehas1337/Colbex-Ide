@@ -3,7 +3,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    background: #1e1e1e;
+    background: var(--theme-background);
     overflow: hidden;
 }
 
@@ -22,28 +22,28 @@
 .table thead {
     position: sticky;
     top: 0;
-    background: #252526;
+    background: var(--theme-background-secondary);
     z-index: 1;
 }
 
 .table th {
     text-align: left;
     padding: 8px 12px;
-    color: #cccccc;
+    color: var(--theme-foreground-muted);
     font-weight: 500;
-    border-bottom: 1px solid #3e3e42;
+    border-bottom: 1px solid var(--theme-border);
     white-space: nowrap;
 }
 
 .table td {
     padding: 6px 12px;
-    color: #cccccc;
-    border-bottom: 1px solid #2d2d30;
+    color: var(--theme-foreground-muted);
+    border-bottom: 1px solid var(--theme-border);
     vertical-align: middle;
 }
 
 .table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--theme-hover-overlay);
 }
 
 .portColumn {
@@ -54,22 +54,22 @@
 .filterInput {
     width: 100%;
     padding: 4px 8px;
-    background: #3c3c3c;
-    border: 1px solid #007acc;
+    background: var(--theme-input-background);
+    border: 1px solid var(--theme-accent);
     border-radius: 2px;
-    color: #cccccc;
+    color: var(--theme-foreground);
     font-size: 12px;
     font-family: inherit;
     outline: none;
 }
 
 .filterInput::placeholder {
-    color: #858585;
+    color: var(--theme-foreground-subtle);
 }
 
 .filterInput:focus {
-    border-color: #007acc;
-    box-shadow: 0 0 0 1px #007acc;
+    border-color: var(--theme-accent);
+    box-shadow: 0 0 0 1px var(--theme-accent);
 }
 
 .portCell {
@@ -79,22 +79,22 @@
 }
 
 .portNumber {
-    color: #4fc1ff;
+    color: var(--theme-accent);
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-weight: 500;
 }
 
 .protocol {
     font-size: 11px;
-    color: #858585;
-    background: #3c3c3c;
+    color: var(--theme-foreground-subtle);
+    background: var(--theme-background-tertiary);
     padding: 1px 4px;
     border-radius: 2px;
 }
 
 .addressCell {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    color: #9cdcfe;
+    color: var(--theme-syntax-variable);
 }
 
 .processCell {
@@ -105,17 +105,17 @@
 
 .pid {
     font-size: 11px;
-    color: #858585;
+    color: var(--theme-foreground-subtle);
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
 .originCell {
-    color: #6a9955;
+    color: var(--theme-success);
 }
 
 .emptyRow {
     text-align: center;
-    color: #858585;
+    color: var(--theme-foreground-subtle);
     padding: 24px !important;
 }
 
@@ -124,7 +124,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #858585;
+    color: var(--theme-foreground-subtle);
     font-size: 13px;
 }
 
@@ -135,13 +135,13 @@
     justify-content: center;
     gap: 12px;
     height: 100%;
-    color: #f14c4c;
+    color: var(--theme-error);
     font-size: 13px;
 }
 
 .retryButton {
     padding: 6px 12px;
-    background: #007acc;
+    background: var(--theme-button-background);
     color: #ffffff;
     border: none;
     border-radius: 2px;
@@ -151,5 +151,5 @@
 }
 
 .retryButton:hover {
-    background: #1177bb;
+    background: var(--theme-button-hover-background);
 }

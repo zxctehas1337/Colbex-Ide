@@ -64,7 +64,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ path }) => {
                 URL.revokeObjectURL(icoDataUrl);
             }
         };
-    }, [path, icoDataUrl]);
+    }, [path]);
 
     const handleWheel = (e: React.WheelEvent) => {
         if (e.ctrlKey) {

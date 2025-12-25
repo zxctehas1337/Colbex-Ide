@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 export type SearchOptions = {
     query: string;
@@ -25,22 +26,6 @@ export type SearchResult = {
 export type ReplaceAllResult = {
     total_replacements: number;
     files_changed: number;
-};
-
-export type TerminalSize = {
-    rows: number;
-    cols: number;
-};
-
-export type TerminalOutput = {
-    terminal_id: string;
-    data: string;
-};
-
-export type TerminalInfo = {
-    terminal_id: string;
-    pid: number;
-    process_name: string;
 };
 
 export type PortInfo = {
@@ -76,6 +61,13 @@ export type ProblemsResult = {
     files: FileProblems[];
     total_errors: number;
     total_warnings: number;
+    scan_time_ms: number;
+    cache_hits: number;
+    cache_misses: number;
+};
+
+export type ProblemsCacheStats = {
+    cached_files: number;
 };
 
 export type GitFileStatus = {
@@ -121,8 +113,6 @@ export type GitContributor = {
     avatar_url: string | null;
 };
 
-<<<<<<< Updated upstream
-=======
 export type GitBranch = {
     name: string;
     is_remote: boolean;
@@ -279,23 +269,25 @@ export type AgentRouterModelsResponse = {
 };
 
 
->>>>>>> Stashed changes
 export const tauriApi = {
+    // Initial state
+    getInitialState: () => invoke<InitialState>('get_initial_state'),
     readDir: (path: string) => invoke<any[]>('read_dir', { path }),
     readFile: (path: string) => invoke<string>('read_file', { path }),
     readFileBinary: (path: string) => invoke<number[]>('read_file_binary', { path }),
+    readFileBinaryChunked: (path: string, offset?: number, size?: number) => 
+        invoke<number[]>('read_file_binary_chunked', { path, offset, size }),
+    getFileSize: (path: string) => invoke<number>('get_file_size', { path }),
     writeFile: (path: string, content: string) => invoke<void>('write_file', { path, content }),
-<<<<<<< Updated upstream
-=======
     createFile: (path: string) => invoke<void>('create_file', { path }),
     createFolder: (path: string) => invoke<void>('create_directory', { path }),
     renamePath: (oldPath: string, newPath: string) => invoke<void>('rename_path', { oldPath, newPath }),
     renameFileWithResult: (oldPath: string, newPath: string) => invoke<RenameResult>('rename_file_with_result', { oldPath, newPath }),
     deletePath: (path: string) => invoke<void>('delete_path', { path }),
->>>>>>> Stashed changes
     getAssetUrl: (path: string) => invoke<string>('get_asset_url', { path }),
     openFileDialog: () => invoke<string | null>('open_file_dialog'),
     openFolderDialog: () => invoke<string | null>('open_folder_dialog'),
+    saveFileDialog: () => invoke<string | null>('save_file_dialog'),
     // Git commands
     gitStatus: (path: string) => invoke<GitFileStatus[]>('git_status', { path }),
     gitInfo: (path: string) => invoke<GitInfo>('git_info', { path }),
@@ -308,55 +300,26 @@ export const tauriApi = {
     gitDiscardChanges: (repoPath: string, filePath: string) => invoke<void>('git_discard_changes', { repoPath, filePath }),
     gitDiff: (repoPath: string, filePath: string, isStaged: boolean) => invoke<FileDiff>('git_diff', { repoPath, filePath, isStaged }),
     gitContributors: (repoPath: string) => invoke<GitContributor[]>('git_contributors', { repoPath }),
+    gitLog: (repoPath: string, limit?: number) => invoke<GitCommit[]>('git_log', { repoPath, limit }),
+    gitListBranches: (repoPath: string) => invoke<GitBranch[]>('git_list_branches', { repoPath }),
+    gitCreateBranch: (repoPath: string, request: { name: string; from_branch?: string; from_commit?: string }) => invoke<string>('git_create_branch', { repoPath, request }),
+    gitCheckoutBranch: (repoPath: string, branchName: string) => invoke<string>('git_checkout_branch', { repoPath, branchName }),
+    gitDeleteBranch: (repoPath: string, branchName: string, force: boolean) => invoke<string>('git_delete_branch', { repoPath, branchName, force }),
+    gitPush: (repoPath: string, remoteName?: string, branchName?: string, force?: boolean) => invoke<GitPushResult>('git_push', { repoPath, remoteName, branchName, force }),
+    gitPushWithForce: (repoPath: string, remoteName?: string, branchName?: string) => invoke<GitPushResult>('git_push_with_force', { repoPath, remoteName, branchName }),
+    gitListRemotes: (repoPath: string) => invoke<string[]>('git_list_remotes', { repoPath }),
+    gitGetRemoteUrl: (repoPath: string, remoteName: string) => invoke<string>('git_get_remote_url', { repoPath, remoteName }),
+    gitGithubAuthStatus: () => invoke<boolean>('git_github_auth_status'),
+    gitGithubAuthLogin: () => invoke<void>('git_github_auth_login'),
     searchInFiles: (root_path: string, options: SearchOptions) =>
         invoke<SearchResult[]>('search_in_files', { rootPath: root_path, options }),
     replaceAll: (root_path: string, options: SearchOptions, replace_query: string, preserve_case_flag: boolean) =>
         invoke<ReplaceAllResult>('replace_all', { rootPath: root_path, options, replace_query, preserve_case_flag }),
     getAllFiles: (root_path: string) => invoke<any[]>('get_all_files', { rootPath: root_path }),
-<<<<<<< Updated upstream
-    // Terminal commands
-    // Tauri 2.0: use camelCase in JS, it auto-converts to snake_case for Rust
-    createTerminal: (terminalType?: string, workspacePath?: string, initialSize?: TerminalSize) =>
-        invoke<TerminalInfo>('create_terminal', {
-            terminalType: terminalType,
-            workspacePath: workspacePath,
-            initialSize: initialSize,
-        }),
-    writeTerminal: (terminalId: string, data: string) => {
-        if (!terminalId || terminalId.trim() === '') {
-            console.error('writeTerminal: terminalId is required', terminalId);
-            return Promise.reject(new Error('terminalId is required'));
-        }
-        return invoke<void>('write_terminal', { terminalId: terminalId, data: data });
-    },
-    resizeTerminal: (terminalId: string, size: TerminalSize) => {
-        if (!terminalId || terminalId.trim() === '') {
-            console.error('resizeTerminal: terminalId is required', terminalId);
-            return Promise.reject(new Error('terminalId is required'));
-        }
-        return invoke<void>('resize_terminal', { terminalId: terminalId, size: size });
-    },
-    closeTerminal: (terminalId: string) => {
-        if (!terminalId || terminalId.trim() === '') {
-            console.error('closeTerminal: terminalId is required', terminalId);
-            return Promise.reject(new Error('terminalId is required'));
-        }
-        return invoke<void>('close_terminal', { terminalId: terminalId });
-    },
-    getTerminalInfo: (terminalId: string) => {
-        if (!terminalId || terminalId.trim() === '') {
-            return Promise.reject(new Error('terminalId is required'));
-        }
-        return invoke<TerminalInfo>('get_terminal_info', { terminalId: terminalId });
-    },
-=======
->>>>>>> Stashed changes
     // Ports commands
     getListeningPorts: () => invoke<PortInfo[]>('get_listening_ports'),
     // Problems commands
     getProblems: (projectPath: string) => invoke<ProblemsResult>('get_problems', { projectPath }),
-<<<<<<< Updated upstream
-=======
     clearProblemsCache: () => invoke<void>('clear_problems_cache'),
     getProblemsCacheStats: () => invoke<ProblemsCacheStats>('get_problems_cache_stats'),
     // Shell commands
@@ -460,5 +423,4 @@ export const tauriApi = {
     setApiKey: (provider: string, key: string) => 
         invoke<void>('set_api_key', { provider, key }),
     getApiKeys: () => invoke<Record<string, boolean>>('get_api_keys'),
->>>>>>> Stashed changes
 };

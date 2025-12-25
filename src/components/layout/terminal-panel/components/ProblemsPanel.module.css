@@ -177,3 +177,25 @@
     flex-shrink: 0;
     white-space: nowrap;
 }
+
+
+/* Stats bar */
+.statsBar {
+    display: flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: #252526;
+    border-bottom: 1px solid #2d2d30;
+    color: #6a9955;
+    font-size: 11px;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.scanStats {
+    color: #6a9955;
+    font-size: 11px;
+}
+
+.errorText {
+    color: #f14c4c;
+}
