@@ -423,4 +423,11 @@ export const tauriApi = {
     setApiKey: (provider: string, key: string) => 
         invoke<void>('set_api_key', { provider, key }),
     getApiKeys: () => invoke<Record<string, boolean>>('get_api_keys'),
+    // Terminal commands
+    createTerminal: (terminalType: string, cwd?: string, size?: { rows: number; cols: number }) =>
+        invoke<{ terminal_id: string; pid: number; process_name: string }>('create_terminal', { terminalType, cwd, size }),
+    writeTerminal: (terminalId: string, data: string) =>
+        invoke<void>('write_terminal', { terminalId, data }),
+    closeTerminal: (terminalId: string) =>
+        invoke<void>('close_terminal', { terminalId }),
 };

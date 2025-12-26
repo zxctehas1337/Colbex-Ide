@@ -6,7 +6,7 @@ import {
     Command, Check
 } from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
-import { useUIStore, themes, availableFonts } from '../../../store/uiStore';
+import { useUIStore, themes, availableFonts, type Theme } from '../../../store/uiStore';
 import styles from './styles';
 
 type SettingsSection = 
@@ -162,7 +162,7 @@ function renderSection(section: SettingsSection) {
 
 const ThemeSection = () => {
     const { theme: currentTheme, setTheme } = useUIStore();
-    const themeList = Object.values(themes);
+    const themeList = Object.values(themes) as Theme[];
     
     return (
         <div className={styles.settingsSection}>
