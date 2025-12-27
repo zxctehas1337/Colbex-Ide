@@ -20,7 +20,7 @@ export const GitPane = () => {
     const [hoveredCommit, setHoveredCommit] = useState<GitCommit | null>(null);
     const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ x: 0, y: 0 });
     const [isTooltipHovered, setIsTooltipHovered] = useState(false);
-    const hideTimeoutRef = useRef<number | null>(null);
+    const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (currentWorkspace) {

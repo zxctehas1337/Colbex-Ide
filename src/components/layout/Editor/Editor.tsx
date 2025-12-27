@@ -53,6 +53,9 @@ export const CodeEditor = () => {
         activeTimelineDiffTab,
         openTimelineDiffTabs,
     } = useProjectStore();
+    
+    // Debug: log on every render (using error to ensure visibility)
+    console.error('=== CodeEditor RENDER ===', { activeSettingsTab, openSettingsTabs, activeFile });
 
     const { insertMode, theme, fontSettings, availableFonts, splitView, splitViewSecondFile, minimapEnabled, lineNumbersEnabled, tabSize } = useUIStore();
     const { setSplitViewSecondFile } = useUIStore();
@@ -140,6 +143,9 @@ export const CodeEditor = () => {
     const activeSettings = activeSettingsTab ? openSettingsTabs.find(t => t.id === activeSettingsTab) : null;
     const activeProfiles = activeProfilesTab ? openProfilesTabs.find(t => t.id === activeProfilesTab) : null;
     const activeTimelineDiff = activeTimelineDiffTab ? openTimelineDiffTabs.find(t => t.id === activeTimelineDiffTab) : null;
+
+    // Debug: log settings state
+    console.log('Editor render - activeSettingsTab:', activeSettingsTab, 'openSettingsTabs:', openSettingsTabs, 'activeSettings:', activeSettings);
 
     // Load file content
     useEffect(() => {

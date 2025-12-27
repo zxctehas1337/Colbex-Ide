@@ -7,7 +7,7 @@ interface AutoSaveState {
     delay: number; // milliseconds
     saveOnFocusLoss: boolean;
     lastSaveTime: { [key: string]: number };
-    pendingSaves: { [key: string]: number };
+    pendingSaves: { [key: string]: ReturnType<typeof setTimeout> };
     isAutoSaving: boolean;
     autoSaveCount: number;
 }

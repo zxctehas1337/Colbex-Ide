@@ -1,9 +1,9 @@
 use super::{OutlineSymbol, Range, SymbolKind};
-use oxc::allocator::Allocator;
-use oxc::ast::ast::*;
-use oxc::ast_visit::{walk, Visit};
-use oxc::parser::Parser;
-use oxc::span::{GetSpan, SourceType, Span};
+use oxc_allocator::Allocator;
+use oxc_ast::ast::*;
+use oxc_ast_visit::{walk, Visit};
+use oxc_parser::Parser;
+use oxc_span::{GetSpan, SourceType, Span};
 use std::fs;
 use std::path::Path;
 
@@ -34,7 +34,6 @@ pub fn parse_outline_from_content(file_path: &str, source: &str) -> Result<Vec<O
 struct OutlineVisitor<'a> {
     source: &'a str,
     symbols: Vec<OutlineSymbol>,
-    // Stack for nested symbols (classes, objects)
     stack: Vec<Vec<OutlineSymbol>>,
 }
 
@@ -96,33 +95,55 @@ impl<'a> OutlineVisitor<'a> {
     fn end_scope(&mut self) -> Vec<OutlineSymbol> {
         self.stack.pop().unwrap_or_default()
     }
+    
+    fn get_property_key_name(&self, key: &PropertyKey<'a>) -> Option<String> {
+        match key {
+            PropertyKey::StaticIdentifier(id) => Some(id.name.to_string()),
+            PropertyKey::PrivateIdentifier(id) => Some(format!("#{}", id.name)),
+            PropertyKey::StringLiteral(s) => Some(s.value.to_string()),
+            PropertyKey::NumericLiteral(n) => Some(n.value.to_string()),
+            _ => None,
+        }
+    }
+    
+    fn get_function_params(&self, params: &FormalParameters<'a>) -> String {
+        let param_names: Vec<String> = params.items.iter()
+            .filter_map(|p| self.get_binding_name(&p.pattern))
+            .collect();
+        format!("({})", param_names.join(", "))
+    }
+    
+    fn get_binding_name(&self, pattern: &BindingPattern<'a>) -> Option<String> {
+        match &pattern.kind {
+            BindingPatternKind::BindingIdentifier(id) => Some(id.name.to_string()),
+            BindingPatternKind::ObjectPattern(_) => Some("{}".to_string()),
+            BindingPatternKind::ArrayPattern(_) => Some("[]".to_string()),
+            BindingPatternKind::AssignmentPattern(assign) => self.get_binding_name(&assign.left),
+        }
+    }
 }
 
 impl<'a> Visit<'a> for OutlineVisitor<'a> {
-    fn visit_function(&mut self, func: &Function<'a>, _flags: oxc::semantic::ScopeFlags) {
+    fn visit_function(&mut self, func: &Function<'a>, _flags: oxc_syntax::scope::ScopeFlags) {
         if let Some(id) = &func.id {
+            let detail = Some(self.get_function_params(&func.params));
             let symbol = OutlineSymbol {
                 name: id.name.to_string(),
                 kind: SymbolKind::Function,
-                detail: self.get_function_detail(func),
+                detail,
                 range: self.span_to_range(func.span),
                 selection_range: self.span_to_range(id.span),
                 children: None,
             };
             self.push_symbol(symbol);
         }
-        
-        // Visit function body for nested declarations
         walk::walk_function(self, func, _flags);
     }
     
     fn visit_class(&mut self, class: &Class<'a>) {
         if let Some(id) = &class.id {
             self.start_scope();
-            
-            // Visit class body
             walk::walk_class(self, class);
-            
             let children = self.end_scope();
             
             let symbol = OutlineSymbol {
@@ -140,32 +161,29 @@ impl<'a> Visit<'a> for OutlineVisitor<'a> {
     }
     
     fn visit_method_definition(&mut self, method: &MethodDefinition<'a>) {
-        let name = self.get_property_key_name(&method.key);
-        if let Some(name) = name {
+        if let Some(name) = self.get_property_key_name(&method.key) {
             let kind = match method.kind {
                 MethodDefinitionKind::Constructor => SymbolKind::Constructor,
-                MethodDefinitionKind::Get => SymbolKind::Property,
-                MethodDefinitionKind::Set => SymbolKind::Property,
+                MethodDefinitionKind::Get | MethodDefinitionKind::Set => SymbolKind::Property,
                 _ => SymbolKind::Method,
             };
             
+            let detail = Some(self.get_function_params(&method.value.params));
             let symbol = OutlineSymbol {
                 name,
                 kind,
-                detail: self.get_method_detail(method),
+                detail,
                 range: self.span_to_range(method.span),
                 selection_range: self.span_to_range(method.key.span()),
                 children: None,
             };
             self.push_symbol(symbol);
         }
-        
         walk::walk_method_definition(self, method);
     }
     
     fn visit_property_definition(&mut self, prop: &PropertyDefinition<'a>) {
-        let name = self.get_property_key_name(&prop.key);
-        if let Some(name) = name {
+        if let Some(name) = self.get_property_key_name(&prop.key) {
             let symbol = OutlineSymbol {
                 name,
                 kind: if prop.r#static { SymbolKind::Constant } else { SymbolKind::Field },
@@ -176,7 +194,6 @@ impl<'a> Visit<'a> for OutlineVisitor<'a> {
             };
             self.push_symbol(symbol);
         }
-        
         walk::walk_property_definition(self, prop);
     }
     
@@ -184,16 +201,71 @@ impl<'a> Visit<'a> for OutlineVisitor<'a> {
         let is_const = decl.kind == VariableDeclarationKind::Const;
         
         for declarator in &decl.declarations {
-            self.visit_variable_declarator(declarator, is_const);
+            if let BindingPatternKind::BindingIdentifier(id) = &declarator.id.kind {
+                let (kind, detail) = if let Some(init) = &declarator.init {
+                    match init {
+                        Expression::ArrowFunctionExpression(arrow) => {
+                            (SymbolKind::Function, Some(self.get_function_params(&arrow.params)))
+                        }
+                        Expression::FunctionExpression(func) => {
+                            (SymbolKind::Function, Some(self.get_function_params(&func.params)))
+                        }
+                        _ => {
+                            let k = if is_const { SymbolKind::Constant } else { SymbolKind::Variable };
+                            (k, None)
+                        }
+                    }
+                } else {
+                    let k = if is_const { SymbolKind::Constant } else { SymbolKind::Variable };
+                    (k, None)
+                };
+                
+                let symbol = OutlineSymbol {
+                    name: id.name.to_string(),
+                    kind,
+                    detail,
+                    range: self.span_to_range(declarator.span),
+                    selection_range: self.span_to_range(id.span),
+                    children: None,
+                };
+                self.push_symbol(symbol);
+            }
         }
     }
     
     fn visit_ts_interface_declaration(&mut self, iface: &TSInterfaceDeclaration<'a>) {
         self.start_scope();
         
-        // Visit interface body
         for sig in &iface.body.body {
-            self.visit_ts_signature(sig);
+            match sig {
+                TSSignature::TSPropertySignature(prop) => {
+                    if let Some(name) = self.get_property_key_name(&prop.key) {
+                        let symbol = OutlineSymbol {
+                            name,
+                            kind: SymbolKind::Property,
+                            detail: None,
+                            range: self.span_to_range(prop.span),
+                            selection_range: self.span_to_range(prop.key.span()),
+                            children: None,
+                        };
+                        self.push_symbol(symbol);
+                    }
+                }
+                TSSignature::TSMethodSignature(method) => {
+                    if let Some(name) = self.get_property_key_name(&method.key) {
+                        let symbol = OutlineSymbol {
+                            name,
+                            kind: SymbolKind::Method,
+                            detail: None,
+                            range: self.span_to_range(method.span),
+                            selection_range: self.span_to_range(method.key.span()),
+                            children: None,
+                        };
+                        self.push_symbol(symbol);
+                    }
+                }
+                _ => {}
+            }
         }
         
         let children = self.end_scope();
@@ -219,18 +291,16 @@ impl<'a> Visit<'a> for OutlineVisitor<'a> {
             children: None,
         };
         self.push_symbol(symbol);
-        
         walk::walk_ts_type_alias_declaration(self, alias);
     }
     
     fn visit_ts_enum_declaration(&mut self, enum_decl: &TSEnumDeclaration<'a>) {
         self.start_scope();
         
-        for member in &enum_decl.body.members {
+        for member in &enum_decl.members {
             let name = match &member.id {
                 TSEnumMemberName::Identifier(id) => id.name.to_string(),
                 TSEnumMemberName::String(s) => s.value.to_string(),
-                _ => continue, // Skip computed names
             };
             
             let symbol = OutlineSymbol {
@@ -255,174 +325,5 @@ impl<'a> Visit<'a> for OutlineVisitor<'a> {
             children: if children.is_empty() { None } else { Some(children) },
         };
         self.push_symbol(symbol);
-    }
-}
-
-impl<'a> OutlineVisitor<'a> {
-    fn visit_variable_declarator(&mut self, decl: &VariableDeclarator<'a>, is_const: bool) {
-        match &decl.id.kind {
-            BindingPatternKind::BindingIdentifier(id) => {
-                // Check if it's an arrow function or function expression
-                let (kind, detail, children) = if let Some(init) = &decl.init {
-                    match init {
-                        Expression::ArrowFunctionExpression(arrow) => {
-                            (SymbolKind::Function, self.get_arrow_detail(arrow), None)
-                        }
-                        Expression::FunctionExpression(func) => {
-                            (SymbolKind::Function, self.get_function_detail(func), None)
-                        }
-                        Expression::ObjectExpression(obj) => {
-                            let children = self.extract_object_properties(obj);
-                            (SymbolKind::Object, None, children)
-                        }
-                        _ => {
-                            let kind = if is_const { SymbolKind::Constant } else { SymbolKind::Variable };
-                            (kind, None, None)
-                        }
-                    }
-                } else {
-                    let kind = if is_const { SymbolKind::Constant } else { SymbolKind::Variable };
-                    (kind, None, None)
-                };
-                
-                let symbol = OutlineSymbol {
-                    name: id.name.to_string(),
-                    kind,
-                    detail,
-                    range: self.span_to_range(decl.span),
-                    selection_range: self.span_to_range(id.span),
-                    children,
-                };
-                self.push_symbol(symbol);
-            }
-            BindingPatternKind::ObjectPattern(obj) => {
-                // Destructuring - create symbols for each property
-                for prop in &obj.properties {
-                    if let BindingPatternKind::BindingIdentifier(id) = &prop.value.kind {
-                        let symbol = OutlineSymbol {
-                            name: id.name.to_string(),
-                            kind: if is_const { SymbolKind::Constant } else { SymbolKind::Variable },
-                            detail: None,
-                            range: self.span_to_range(prop.span),
-                            selection_range: self.span_to_range(id.span),
-                            children: None,
-                        };
-                        self.push_symbol(symbol);
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-    
-    fn visit_ts_signature(&mut self, sig: &TSSignature<'a>) {
-        match sig {
-            TSSignature::TSPropertySignature(prop) => {
-                let name = self.get_property_key_name(&prop.key);
-                if let Some(name) = name {
-                    let symbol = OutlineSymbol {
-                        name,
-                        kind: SymbolKind::Property,
-                        detail: None,
-                        range: self.span_to_range(prop.span),
-                        selection_range: self.span_to_range(prop.key.span()),
-                        children: None,
-                    };
-                    self.push_symbol(symbol);
-                }
-            }
-            TSSignature::TSMethodSignature(method) => {
-                let name = self.get_property_key_name(&method.key);
-                if let Some(name) = name {
-                    let symbol = OutlineSymbol {
-                        name,
-                        kind: SymbolKind::Method,
-                        detail: None,
-                        range: self.span_to_range(method.span),
-                        selection_range: self.span_to_range(method.key.span()),
-                        children: None,
-                    };
-                    self.push_symbol(symbol);
-                }
-            }
-            _ => {}
-        }
-    }
-    
-    fn get_property_key_name(&self, key: &PropertyKey<'a>) -> Option<String> {
-        match key {
-            PropertyKey::StaticIdentifier(id) => Some(id.name.to_string()),
-            PropertyKey::PrivateIdentifier(id) => Some(format!("#{}", id.name)),
-            PropertyKey::StringLiteral(s) => Some(s.value.to_string()),
-            PropertyKey::NumericLiteral(n) => Some(n.value.to_string()),
-            _ => None,
-        }
-    }
-    
-    fn get_function_detail(&self, func: &Function<'a>) -> Option<String> {
-        let params: Vec<String> = func.params.items.iter()
-            .filter_map(|p| self.get_param_name(&p.pattern))
-            .collect();
-        Some(format!("({})", params.join(", ")))
-    }
-    
-    fn get_arrow_detail(&self, arrow: &ArrowFunctionExpression<'a>) -> Option<String> {
-        let params: Vec<String> = arrow.params.items.iter()
-            .filter_map(|p| self.get_param_name(&p.pattern))
-            .collect();
-        Some(format!("({})", params.join(", ")))
-    }
-    
-    fn get_method_detail(&self, method: &MethodDefinition<'a>) -> Option<String> {
-        let params: Vec<String> = method.value.params.items.iter()
-            .filter_map(|p| self.get_param_name(&p.pattern))
-            .collect();
-        Some(format!("({})", params.join(", ")))
-    }
-    
-    fn get_param_name(&self, pattern: &BindingPattern<'a>) -> Option<String> {
-        match &pattern.kind {
-            BindingPatternKind::BindingIdentifier(id) => Some(id.name.to_string()),
-            BindingPatternKind::ObjectPattern(_) => Some("{}".to_string()),
-            BindingPatternKind::ArrayPattern(_) => Some("[]".to_string()),
-            BindingPatternKind::AssignmentPattern(assign) => {
-                self.get_param_name(&assign.left)
-            }
-        }
-    }
-    
-    fn extract_object_properties(&self, obj: &ObjectExpression<'a>) -> Option<Vec<OutlineSymbol>> {
-        let mut children = Vec::new();
-        
-        for prop in &obj.properties {
-            match prop {
-                ObjectPropertyKind::ObjectProperty(p) => {
-                    let name = self.get_property_key_name(&p.key);
-                    if let Some(name) = name {
-                        let (kind, detail) = match &p.value {
-                            Expression::ArrowFunctionExpression(arrow) => {
-                                (SymbolKind::Method, self.get_arrow_detail(arrow))
-                            }
-                            Expression::FunctionExpression(func) => {
-                                (SymbolKind::Method, self.get_function_detail(func))
-                            }
-                            _ => (SymbolKind::Property, None),
-                        };
-                        
-                        children.push(OutlineSymbol {
-                            name,
-                            kind,
-                            detail,
-                            range: self.span_to_range(p.span),
-                            selection_range: self.span_to_range(p.key.span()),
-                            children: None,
-                        });
-                    }
-                }
-                ObjectPropertyKind::SpreadProperty(_) => {}
-            }
-        }
-        
-        if children.is_empty() { None } else { Some(children) }
     }
 }

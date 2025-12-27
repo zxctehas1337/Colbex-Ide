@@ -225,3 +225,32 @@ fn normalize_path(file_path: &str, project_path: &str) -> String {
         file_path
     }
 }
+
+
+// Cache for problems
+use std::sync::Mutex;
+use std::collections::HashMap as StdHashMap;
+
+lazy_static::lazy_static! {
+    static ref PROBLEMS_CACHE: Mutex<StdHashMap<String, ProblemsResult>> = Mutex::new(StdHashMap::new());
+}
+
+#[tauri::command]
+pub fn clear_problems_cache() -> Result<(), String> {
+    PROBLEMS_CACHE.lock().unwrap().clear();
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_problems_cache_stats() -> Result<serde_json::Value, String> {
+    let cache = PROBLEMS_CACHE.lock().unwrap();
+    Ok(serde_json::json!({
+        "entries": cache.len()
+    }))
+}
+
+#[tauri::command]
+pub async fn check_files(project_path: String, _files: Vec<String>) -> Result<ProblemsResult, String> {
+    // For now, just run full check - could be optimized to check specific files
+    get_problems(project_path).await
+}

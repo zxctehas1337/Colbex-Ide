@@ -54,7 +54,7 @@ export const useEditorEvents = ({
     const decorationsRef = useRef<string[]>([]);
     const problemHighlightRef = useRef<string[]>([]);
     const pendingRevealRef = useRef<PendingReveal | null>(null);
-    const outlineTimeoutRef = useRef<number | null>(null);
+    const outlineTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastActiveFileRef = useRef<string | null>(null);
 
     // Collect Monaco diagnostics and update store
@@ -283,23 +283,23 @@ export const useEditorEvents = ({
             }
 
             // Ctrl+C / Cmd+C - Copy
+            // Let Monaco handle copy natively (don't preventDefault)
             if (physicalKey === 'c' && !e.shiftKey && !e.altKey) {
-                e.preventDefault();
-                editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
+                // Don't block - let browser/Monaco handle clipboard natively
                 return;
             }
 
             // Ctrl+X / Cmd+X - Cut
+            // Let Monaco handle cut natively (don't preventDefault)
             if (physicalKey === 'x' && !e.shiftKey && !e.altKey) {
-                e.preventDefault();
-                editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
+                // Don't block - let browser/Monaco handle clipboard natively
                 return;
             }
 
             // Ctrl+V / Cmd+V - Paste
+            // Let Monaco handle paste natively (don't preventDefault)
             if (physicalKey === 'v' && !e.shiftKey && !e.altKey) {
-                e.preventDefault();
-                editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+                // Don't block - let browser/Monaco handle clipboard natively
                 return;
             }
 

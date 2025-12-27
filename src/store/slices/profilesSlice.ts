@@ -23,6 +23,7 @@ export const createProfilesSlice: StateCreator<
         activeDiffTab: string | null;
         openSettingsTabs: SettingsTab[];
         activeSettingsTab: string | null;
+        activeTimelineDiffTab: string | null;
     },
     [],
     [],
@@ -42,7 +43,8 @@ export const createProfilesSlice: StateCreator<
                 activeProfilesTab: id, 
                 activeFile: null, 
                 activeDiffTab: null,
-                activeSettingsTab: null
+                activeSettingsTab: null,
+                activeTimelineDiffTab: null
             });
             return;
         }
@@ -52,7 +54,8 @@ export const createProfilesSlice: StateCreator<
             activeProfilesTab: id,
             activeFile: null,
             activeDiffTab: null,
-            activeSettingsTab: null
+            activeSettingsTab: null,
+            activeTimelineDiffTab: null
         });
     },
 
@@ -91,7 +94,7 @@ export const createProfilesSlice: StateCreator<
 
     setActiveProfilesTab: (id: string | null) => {
         if (id) {
-            set({ activeProfilesTab: id, activeFile: null, activeDiffTab: null, activeSettingsTab: null });
+            set({ activeProfilesTab: id, activeFile: null, activeDiffTab: null, activeSettingsTab: null, activeTimelineDiffTab: null });
         } else {
             set({ activeProfilesTab: null });
         }

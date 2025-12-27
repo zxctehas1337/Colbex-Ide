@@ -28,6 +28,7 @@ export const createSettingsSlice: StateCreator<
         openDiffTabs: DiffTab[];
         activeDiffTab: string | null;
         activeProfilesTab: string | null;
+        activeTimelineDiffTab: string | null;
     },
     [],
     [],
@@ -60,7 +61,8 @@ export const createSettingsSlice: StateCreator<
                 activeSettingsTab: id, 
                 activeFile: null, 
                 activeDiffTab: null,
-                activeProfilesTab: null
+                activeProfilesTab: null,
+                activeTimelineDiffTab: null
             });
             return;
         }
@@ -70,7 +72,8 @@ export const createSettingsSlice: StateCreator<
             activeSettingsTab: id,
             activeFile: null,
             activeDiffTab: null,
-            activeProfilesTab: null
+            activeProfilesTab: null,
+            activeTimelineDiffTab: null
         });
     },
 
@@ -105,7 +108,7 @@ export const createSettingsSlice: StateCreator<
 
     setActiveSettingsTab: (id: string | null) => {
         if (id) {
-            set({ activeSettingsTab: id, activeFile: null, activeDiffTab: null, activeProfilesTab: null });
+            set({ activeSettingsTab: id, activeFile: null, activeDiffTab: null, activeProfilesTab: null, activeTimelineDiffTab: null });
         } else {
             set({ activeSettingsTab: null });
         }

@@ -8,10 +8,15 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "build:msi": "tauri build --target msi",
-    "build:deb": "tauri build --target deb",
-    "build:appimage": "tauri build --target appimage",
-    "build:all": "tauri build --target msi,deb,appimage"
+    "build:exe": "tauri build --target x86_64-pc-windows-msvc --bundles nsis",
+    "build:msi": "tauri build --target x86_64-pc-windows-msvc --bundles msi",
+    "build:deb": "tauri build --target x86_64-unknown-linux-gnu --bundles deb",
+    "build:dmg": "tauri build --target x86_64-apple-darwin --bundles dmg",
+    "build:appimage": "tauri build --target x86_64-unknown-linux-gnu --bundles appimage",
+    "build:windows": "tauri build --target x86_64-pc-windows-msvc --bundles nsis,msi",
+    "build:linux": "tauri build --target x86_64-unknown-linux-gnu --bundles deb,appimage",
+    "build:macos": "tauri build --target x86_64-apple-darwin --bundles dmg",
+    "build:all": "tauri build --bundles nsis,msi,deb,appimage,dmg"
   },
   "dependencies": {
     "@fortawesome/free-brands-svg-icons": "^7.1.0",

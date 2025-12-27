@@ -444,3 +444,237 @@ pub async fn get_all_files(root_path: String) -> Result<Vec<SearchFile>, String>
     .await
     .map_err(|e| format!("Get all files task failed: {}", e))?
 }
+
+
+// File size command
+#[tauri::command]
+pub fn get_file_size(path: String) -> Result<u64, String> {
+    let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
+    Ok(metadata.len())
+}
+
+// Read file binary in chunks
+#[tauri::command]
+pub fn read_file_binary_chunked(path: String, offset: u64, chunk_size: u64) -> Result<Vec<u8>, String> {
+    use std::io::{Read, Seek, SeekFrom};
+    let mut file = std::fs::File::open(&path).map_err(|e| e.to_string())?;
+    file.seek(SeekFrom::Start(offset)).map_err(|e| e.to_string())?;
+    let mut buffer = vec![0u8; chunk_size as usize];
+    let bytes_read = file.read(&mut buffer).map_err(|e| e.to_string())?;
+    buffer.truncate(bytes_read);
+    Ok(buffer)
+}
+
+// Create file
+#[tauri::command]
+pub fn create_file(path: String) -> Result<(), String> {
+    std::fs::File::create(&path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// Create folder
+#[tauri::command]
+pub fn create_folder(path: String) -> Result<(), String> {
+    fs::create_dir_all(&path).map_err(|e| e.to_string())
+}
+
+// Rename path
+#[tauri::command]
+pub fn rename_path(old_path: String, new_path: String) -> Result<(), String> {
+    fs::rename(&old_path, &new_path).map_err(|e| e.to_string())
+}
+
+// Rename file with result
+#[tauri::command]
+pub fn rename_file_with_result(old_path: String, new_path: String) -> Result<String, String> {
+    fs::rename(&old_path, &new_path).map_err(|e| e.to_string())?;
+    Ok(new_path)
+}
+
+// Delete path
+#[tauri::command]
+pub fn delete_path(path: String) -> Result<(), String> {
+    let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
+    if metadata.is_dir() {
+        fs::remove_dir_all(&path).map_err(|e| e.to_string())
+    } else {
+        fs::remove_file(&path).map_err(|e| e.to_string())
+    }
+}
+
+// Save file dialog
+#[tauri::command]
+pub async fn save_file_dialog(window: Window, default_name: Option<String>) -> Result<Option<String>, String> {
+    let (tx, rx) = std::sync::mpsc::channel();
+
+    let mut dialog = window.dialog().file();
+    if let Some(name) = default_name {
+        dialog = dialog.set_file_name(&name);
+    }
+    
+    dialog.save_file(move |path| {
+        let _ = tx.send(path.map(|p| match p {
+            tauri_plugin_dialog::FilePath::Path(path) => path.to_string_lossy().to_string(),
+            tauri_plugin_dialog::FilePath::Url(url) => url.to_string(),
+        }));
+    });
+
+    rx.recv().map_err(|e| e.to_string())
+}
+
+// Open new window
+#[tauri::command]
+pub fn open_new_window(workspace_path: Option<String>) -> Result<(), String> {
+    use std::process::Command;
+    
+    let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    let mut cmd = Command::new(current_exe);
+    
+    if let Some(path) = workspace_path {
+        cmd.arg("--workspace").arg(path);
+    }
+    
+    cmd.spawn().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// File watcher state
+use std::sync::Mutex;
+use std::collections::HashMap;
+
+pub struct FileWatcherState {
+    pub watchers: Mutex<HashMap<String, notify::RecommendedWatcher>>,
+}
+
+impl Default for FileWatcherState {
+    fn default() -> Self {
+        Self {
+            watchers: Mutex::new(HashMap::new()),
+        }
+    }
+}
+
+#[tauri::command]
+pub fn start_file_watcher(
+    window: Window,
+    path: String,
+    state: tauri::State<'_, FileWatcherState>,
+) -> Result<(), String> {
+    use notify::{Watcher, RecursiveMode};
+use tauri::Emitter;
+use serde::Serialize;
+
+#[derive(Serialize, Clone)]
+struct FileChangeEvent {
+    kind: String,
+    paths: Vec<String>,
+}
+    
+    let window_clone = window.clone();
+    let mut watcher = notify::recommended_watcher(move |res: Result<notify::Event, notify::Error>| {
+        if let Ok(event) = res {
+            let file_event = FileChangeEvent {
+                kind: format!("{:?}", event.kind),
+                paths: event.paths.iter().map(|p| p.to_string_lossy().to_string()).collect(),
+            };
+            let _ = window_clone.emit("file-change", &file_event);
+        }
+    }).map_err(|e| e.to_string())?;
+    
+    watcher.watch(std::path::Path::new(&path), RecursiveMode::Recursive)
+        .map_err(|e| e.to_string())?;
+    
+    state.watchers.lock().unwrap().insert(path, watcher);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn stop_file_watcher(path: String, state: tauri::State<'_, FileWatcherState>) -> Result<(), String> {
+    state.watchers.lock().unwrap().remove(&path);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn add_watch_path(
+    path: String,
+    watch_path: String,
+    state: tauri::State<'_, FileWatcherState>,
+) -> Result<(), String> {
+    use notify::{Watcher, RecursiveMode};
+    
+    let mut watchers = state.watchers.lock().unwrap();
+    if let Some(watcher) = watchers.get_mut(&path) {
+        watcher.watch(std::path::Path::new(&watch_path), RecursiveMode::Recursive)
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+// Audio cache
+use std::time::{Duration, Instant};
+
+pub struct AudioCacheEntry {
+    pub data: Vec<u8>,
+    pub created_at: Instant,
+}
+
+pub struct AudioCache {
+    pub cache: Mutex<HashMap<String, AudioCacheEntry>>,
+    pub max_entries: usize,
+    pub ttl_hours: u64,
+}
+
+impl AudioCache {
+    pub fn new(max_entries: usize, ttl_hours: u64) -> Self {
+        Self {
+            cache: Mutex::new(HashMap::new()),
+            max_entries,
+            ttl_hours,
+        }
+    }
+}
+
+#[tauri::command]
+pub fn get_cached_audio(key: String, state: tauri::State<'_, AudioCache>) -> Result<Option<Vec<u8>>, String> {
+    let cache = state.cache.lock().unwrap();
+    if let Some(entry) = cache.get(&key) {
+        let ttl = Duration::from_secs(state.ttl_hours * 3600);
+        if entry.created_at.elapsed() < ttl {
+            return Ok(Some(entry.data.clone()));
+        }
+    }
+    Ok(None)
+}
+
+#[tauri::command]
+pub fn cache_audio(key: String, data: Vec<u8>, state: tauri::State<'_, AudioCache>) -> Result<(), String> {
+    let mut cache = state.cache.lock().unwrap();
+    
+    // Clean up expired entries if at capacity
+    if cache.len() >= state.max_entries {
+        let ttl = Duration::from_secs(state.ttl_hours * 3600);
+        cache.retain(|_, v| v.created_at.elapsed() < ttl);
+    }
+    
+    cache.insert(key, AudioCacheEntry {
+        data,
+        created_at: Instant::now(),
+    });
+    Ok(())
+}
+
+#[tauri::command]
+pub fn clear_audio_cache(state: tauri::State<'_, AudioCache>) -> Result<(), String> {
+    state.cache.lock().unwrap().clear();
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_audio_cache_stats(state: tauri::State<'_, AudioCache>) -> Result<serde_json::Value, String> {
+    let cache = state.cache.lock().unwrap();
+    Ok(serde_json::json!({
+        "entries": cache.len(),
+        "max_entries": state.max_entries,
+        "ttl_hours": state.ttl_hours
+    }))
+}

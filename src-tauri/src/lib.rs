@@ -1,9 +1,13 @@
+mod command_palette;
 mod fs;
 mod git;
+mod keybindings;
 mod npm;
 mod outline;
 mod ports;
 mod problems;
+mod session;
+mod settings;
 mod timeline;
 mod ollama;
 mod agentrouter;
@@ -77,6 +81,10 @@ pub fn run() {
         .manage(agentrouter::AgentRouterState::default())
         // Wrap ApiKeyStore in a Mutex to match State<'_, Mutex<ApiKeyStore>> in commands
         .manage(Mutex::new(api_keys::ApiKeyStore::default()))
+        .manage(keybindings::KeybindingsState::new(keybindings::KeybindingsStore::new()))
+        .manage(settings::SettingsState::new())
+        .manage(session::SessionState::new())
+        .manage(command_palette::CommandPaletteState::new())
         .manage(Mutex::new(AppState { 
             initial_state,
         }))
@@ -129,10 +137,10 @@ pub fn run() {
             git::git_stage_all,
             git::git_unstage_all,
             git::git_commit,
-            git::git_push,
-            git::git_push_with_force,
-            git::git_list_remotes,
-            git::git_get_remote_url,
+            git::push::git_push,
+            git::push::git_push_with_force,
+            git::push::git_list_remotes,
+            git::push::git_get_remote_url,
             git::git_discard_changes,
             git::git_diff,
             git::git_contributors,
@@ -183,7 +191,62 @@ pub fn run() {
             xai::xai_chat,
             xai::xai_chat_stream,
             api_keys::set_api_key,
-            api_keys::get_api_keys
+            api_keys::get_api_keys,
+            keybindings::keybindings_init,
+            keybindings::keybindings_get_all,
+            keybindings::keybindings_lookup,
+            keybindings::keybindings_lookup_chord,
+            keybindings::keybindings_set,
+            keybindings::keybindings_remove,
+            keybindings::keybindings_disable,
+            keybindings::keybindings_get_conflicts,
+            keybindings::keybindings_reset,
+            keybindings::keybindings_format_display,
+            settings::settings_init,
+            settings::settings_get_all,
+            settings::settings_get_user,
+            settings::settings_get_workspace,
+            settings::settings_update_section,
+            settings::settings_update_value,
+            settings::settings_set_workspace,
+            settings::settings_clear_workspace,
+            settings::settings_reload,
+            settings::settings_get_paths,
+            settings::settings_reset,
+            session::session_init,
+            session::session_get_global,
+            session::session_update_window,
+            session::session_update_zoom,
+            session::session_get_recent_workspaces,
+            session::session_remove_recent_workspace,
+            session::session_get_last_workspace,
+            session::session_open_workspace,
+            session::session_close_workspace,
+            session::session_get_workspace,
+            session::session_save_workspace,
+            session::session_open_tab,
+            session::session_close_tab,
+            session::session_set_active_file,
+            session::session_update_editor_state,
+            session::session_get_editor_state,
+            session::session_update_panels,
+            session::session_update_split_view,
+            session::session_update_expanded_folders,
+            session::session_save_all,
+            session::session_delete_workspace,
+            session::session_get_paths,
+            command_palette::command_palette_init,
+            command_palette::command_palette_search,
+            command_palette::command_palette_get_all,
+            command_palette::command_palette_get,
+            command_palette::command_palette_register,
+            command_palette::command_palette_register_many,
+            command_palette::command_palette_unregister,
+            command_palette::command_palette_unregister_source,
+            command_palette::command_palette_set_enabled,
+            command_palette::command_palette_update,
+            command_palette::command_palette_count,
+            command_palette::command_palette_categories
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
