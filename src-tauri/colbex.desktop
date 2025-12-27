@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=Colbex
+Name=Colbex IDE
 Comment=New Era Of Coding
 Exec=colbex %U
 Icon=Colbex
