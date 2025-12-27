@@ -52,7 +52,7 @@ jobs:
       - name: Install dependencies
         run: npm install
         
-      - name: Build Tauri (DEB + AppImage)
+      - name: Build Tauri (DEB)
         run: npm run tauri build
         
       - name: Upload Linux artifacts
@@ -61,7 +61,6 @@ jobs:
           name: linux-builds
           path: |
             src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/appimage/*.AppImage
 
   build-macos:
     runs-on: macos-latest
