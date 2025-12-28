@@ -54,13 +54,20 @@ pub struct FileDiff {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct GitLogEntry {
-    pub id: String,
-    pub short_id: String,
+pub struct GitCommit {
+    pub hash: String,
+    pub short_hash: String,
     pub message: String,
     pub author_name: String,
     pub author_email: String,
+    pub author_avatar: Option<String>,
     pub date: String,
+    pub timestamp: i64,
+    pub branches: Vec<String>,
+    pub is_head: bool,
+    pub files_changed: usize,
+    pub insertions: usize,
+    pub deletions: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -429,32 +436,147 @@ pub fn git_contributors(repo_path: String) -> Result<Vec<GitContributor>, String
 }
 
 #[tauri::command]
-pub fn git_log(repo_path: String, max_count: Option<usize>) -> Result<Vec<GitLogEntry>, String> {
+pub fn git_log(repo_path: String, max_count: Option<usize>) -> Result<Vec<GitCommit>, String> {
     let repo = Repository::open(&repo_path).map_err(|e| e.to_string())?;
     let mut revwalk = repo.revwalk().map_err(|e| e.to_string())?;
     revwalk.push_head().map_err(|e| e.to_string())?;
     
+    // Get current HEAD commit OID
+    let head_oid = repo.head()
+        .ok()
+        .and_then(|head| head.target());
+    
+    // Get remote URL for avatar generation
+    let github_username = repo.find_remote("origin")
+        .ok()
+        .and_then(|remote| remote.url().map(|s| s.to_string()))
+        .and_then(|url| extract_github_username(&url));
+    
+    // Get local user config
+    let config = repo.config().ok();
+    let local_email = config.as_ref().and_then(|c| c.get_string("user.email").ok());
+    let local_name = config.as_ref().and_then(|c| c.get_string("user.name").ok());
+    
+    // Build commit to branches mapping
+    let mut commit_branches: HashMap<git2::Oid, Vec<String>> = HashMap::new();
+    if let Ok(branches) = repo.branches(None) {
+        for branch_result in branches {
+            if let Ok((branch, branch_type)) = branch_result {
+                let branch_name = branch.name().ok().flatten().unwrap_or("unknown").to_string();
+                let display_name = if branch_type == git2::BranchType::Remote {
+                    branch_name.clone()
+                } else {
+                    branch_name.clone()
+                };
+                
+                if let Ok(reference) = branch.into_reference().resolve() {
+                    if let Some(oid) = reference.target() {
+                        commit_branches.entry(oid).or_insert_with(Vec::new).push(display_name);
+                    }
+                }
+            }
+        }
+    }
+    
     let max = max_count.unwrap_or(100);
-    let mut entries = Vec::new();
+    let mut commits = Vec::new();
     
     for (i, oid_result) in revwalk.enumerate() {
         if i >= max { break; }
         if let Ok(oid) = oid_result {
             if let Ok(commit) = repo.find_commit(oid) {
                 let author = commit.author();
-                entries.push(GitLogEntry {
-                    id: oid.to_string(),
-                    short_id: oid.to_string()[..7].to_string(),
-                    message: commit.message().unwrap_or("").to_string(),
-                    author_name: author.name().unwrap_or("Unknown").to_string(),
-                    author_email: author.email().unwrap_or("").to_string(),
-                    date: format!("{}", commit.time().seconds()),
+                let author_name = author.name().unwrap_or("Unknown").to_string();
+                let author_email = author.email().unwrap_or("").to_string();
+                
+                // Check if this is HEAD
+                let is_head = head_oid.map(|h| h == oid).unwrap_or(false);
+                
+                // Get branches for this commit
+                let branches = commit_branches.get(&oid)
+                    .cloned()
+                    .unwrap_or_default();
+                
+                // Get commit time
+                let commit_time = commit.time();
+                let timestamp = commit_time.seconds();
+                
+                // Format date
+                let date = {
+                    use std::time::{SystemTime, UNIX_EPOCH, Duration};
+                    let dt = UNIX_EPOCH + Duration::from_secs(timestamp as u64);
+                    let datetime: chrono::DateTime<chrono::Utc> = dt.into();
+                    datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+                };
+                
+                // Get avatar URL
+                let is_local = local_email.as_ref().map(|le| le == &author_email).unwrap_or(false);
+                let author_avatar = get_avatar_url(&author_email, &author_name, is_local, github_username.as_deref());
+                
+                // Calculate stats (files changed, insertions, deletions)
+                let (files_changed, insertions, deletions) = {
+                    let mut files = 0;
+                    let mut insertions = 0;
+                    let mut deletions = 0;
+                    
+                    if let Ok(parent) = commit.parent(0) {
+                        if let Ok(parent_tree) = parent.tree() {
+                            if let Ok(commit_tree) = commit.tree() {
+                                if let Ok(diff) = repo.diff_tree_to_tree(
+                                    Some(&parent_tree),
+                                    Some(&commit_tree),
+                                    None
+                                ) {
+                                    if let Ok(stats) = diff.stats() {
+                                        files = stats.files_changed();
+                                        insertions = stats.insertions();
+                                        deletions = stats.deletions();
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // First commit - all files are new
+                        if let Ok(tree) = commit.tree() {
+                            files = tree.len();
+                            if let Ok(diff) = repo.diff_tree_to_tree(None, Some(&tree), None) {
+                                if let Ok(stats) = diff.stats() {
+                                    insertions = stats.insertions();
+                                }
+                            }
+                        }
+                    }
+                    
+                    (files, insertions, deletions)
+                };
+                
+                let hash_str = oid.to_string();
+                let short_hash = if hash_str.len() >= 7 {
+                    hash_str[..7].to_string()
+                } else {
+                    hash_str.clone()
+                };
+                
+                commits.push(GitCommit {
+                    hash: hash_str,
+                    short_hash,
+                    message: commit.message().unwrap_or("").trim().to_string(),
+                    author_name,
+                    author_email,
+                    author_avatar,
+                    date,
+                    timestamp,
+                    branches,
+                    is_head,
+                    files_changed,
+                    insertions,
+                    deletions,
                 });
             }
         }
     }
     
-    Ok(entries)
+    Ok(commits)
 }
 
 #[tauri::command]
@@ -548,4 +670,36 @@ fn get_avatar_url(email: &str, name: &str, is_local: bool, github_username: Opti
     
     let hash = md5_hash(&email.trim().to_lowercase());
     Some(format!("https://www.gravatar.com/avatar/{}?s=40&d=retro", hash))
+}
+
+#[tauri::command]
+pub fn git_github_auth_status() -> Result<bool, String> {
+    // Check if GitHub CLI is authenticated
+    let output = std::process::Command::new("gh")
+        .args(&["auth", "status"])
+        .output();
+    
+    match output {
+        Ok(result) => Ok(result.status.success()),
+        Err(_) => Ok(false),
+    }
+}
+
+#[tauri::command]
+pub fn git_github_auth_login() -> Result<(), String> {
+    // Try to authenticate via GitHub CLI
+    let output = std::process::Command::new("gh")
+        .args(&["auth", "login"])
+        .status();
+    
+    match output {
+        Ok(status) => {
+            if status.success() {
+                Ok(())
+            } else {
+                Err("GitHub authentication failed".to_string())
+            }
+        }
+        Err(e) => Err(format!("Failed to run GitHub CLI: {}", e)),
+    }
 }

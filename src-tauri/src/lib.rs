@@ -146,6 +146,8 @@ pub fn run() {
             git::git_contributors,
             git::git_log,
             git::git_list_branches,
+            git::git_github_auth_status,
+            git::git_github_auth_login,
             git::git_create_branch,
             git::git_checkout_branch,
             git::git_delete_branch,
