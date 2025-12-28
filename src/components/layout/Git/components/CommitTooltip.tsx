@@ -44,9 +44,9 @@ export const CommitTooltip = ({
                     <span className={styles.deletions}>{commit.deletions} deletions(-)</span>
                 )}
             </div>
-            {commit.branches.length > 0 && (
+            {(commit.branches?.length ?? 0) > 0 && (
                 <div className={styles.tooltipBranches}>
-                    {commit.branches.map((branch) => (
+                    {(commit.branches ?? []).map((branch) => (
                         <span 
                             key={branch} 
                             className={`${styles.tooltipBranch} ${branch.includes('origin') ? styles.remoteBranch : styles.localBranch}`}

@@ -60,9 +60,9 @@ export const GraphSection = ({
                                     <span className={styles.commitNumber}>{commits.length - index}</span>
                                     <span className={styles.commitMessage}>{c.message || c.author_name}</span>
                                 </div>
-                                {c.branches.length > 0 && (
+                                {(c.branches?.length ?? 0) > 0 && (
                                     <div className={styles.commitBranches}>
-                                        {c.branches.slice(0, 2).map((branch) => (
+                                        {(c.branches ?? []).slice(0, 2).map((branch) => (
                                             <span 
                                                 key={branch} 
                                                 className={`${styles.branchBadge} ${branch.includes('origin') ? styles.remoteBranch : styles.localBranch}`}
@@ -73,7 +73,7 @@ export const GraphSection = ({
                                         ))}
                                     </div>
                                 )}
-                                {c.is_head && c.branches.length > 0 && (
+                                {(c.branches?.length ?? 0) > 0 && c.is_head && (
                                     <button className={styles.pushBtn} title="Push">
                                         <ExternalLink size={12} />
                                     </button>
